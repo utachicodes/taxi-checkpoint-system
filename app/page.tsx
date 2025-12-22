@@ -41,15 +41,15 @@ export default function LandingPage() {
             {/* Left Column: Typography */}
             <div className="space-y-8">
               <h1 className="text-5xl md:text-7xl font-bold leading-[0.95] tracking-tight text-white animate-fade-in-up delay-100">
-                Sécurité <br />
-                et contrôle <br />
-                <span className="text-gradient-gold">intelligents.</span>
+                La garde <br />
+                intelligente <br />
+                du <span className="text-gradient-gold">transport.</span>
               </h1>
 
               <p className="max-w-md text-gray-400 text-lg leading-relaxed animate-fade-in-up delay-200">
-                La plateforme officielle de gestion des points de contrôle pour la
-                <span className="text-white font-medium"> modernisation du transport </span>
-                au Sénégal.
+                L'écosystème numérique de confiance pour la
+                <span className="text-white font-medium"> surveillance et régularisation </span>
+                des taxis au Sénégal.
               </p>
 
               <div className="pt-4 flex gap-4 animate-fade-in-up delay-300">

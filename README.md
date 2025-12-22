@@ -1,11 +1,6 @@
-# Taxi checkpoint system
+# TaxiGuard Platform: Unified Ecosystem for Municipal Revenue & Traffic Oversight
 
-## Overview
-
-Système de Gestion des Points de Contrôle Taxi - République du Sénégal.
-
-## Deployment
-
-Your project is live at:
-
-**[https://vercel.com/utachicodes-projects/v0-taxi-checkpoint-system](https://vercel.com/utachicodes-projects/v0-taxi-checkpoint-system)**
+![Build Status](https://img.shields.io/badge/Build-Passing-success)
+![Platform](https://img.shields.io/badge/Platform-TaxiGuard-blue)
+![AI Engine](https://img.shields.io/badge/AI-Qwen2--VL-orange)
+![Backend](https://img.shields.io/badge/Stack-Next.

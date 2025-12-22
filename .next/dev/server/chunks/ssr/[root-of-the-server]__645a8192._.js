@@ -109,8 +109,8 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$Innovation_Stud
 ;
 ;
 const metadata = {
-    title: 'Contrôle TaxiGuard - République du Sénégal',
-    description: 'Système de Gestion des Points de Contrôle Taxi',
+    title: 'TaxiGuard - République du Sénégal',
+    description: 'Plateforme Intelligente de Gestion des Points de Contrôle',
     generator: 'Next.js'
 };
 ;

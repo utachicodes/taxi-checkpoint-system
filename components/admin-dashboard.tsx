@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { createOperatorAction, getOperatorsAction, deleteOperatorAction } from "@/lib/actions/operator-actions"
 import type { Operator, Vehicle, Driver, DailyPayment, Checkpoint } from "@/lib/types"
+import ScanLive from "@/components/supabase/ScanLive"
 
 export default function AdminDashboard({ operator }: { operator: Operator }) {
   const [stats, setStats] = useState({ drivers: 0, vehicles: 0, paymentsToday: 0, revenueToday: 0 })
@@ -28,7 +29,7 @@ export default function AdminDashboard({ operator }: { operator: Operator }) {
   const [newPlate, setNewPlate] = useState("")
   const [newMake, setNewMake] = useState("")
   const [newModel, setNewModel] = useState("")
-  const [selectedDriverId, setSelectedDriverId] = useState("")
+  const [driverName, setDriverName] = useState("")
 
   // New Operator Form State
   const [newOpEmail, setNewOpEmail] = useState("")
@@ -81,16 +82,47 @@ export default function AdminDashboard({ operator }: { operator: Operator }) {
 
   const handleAddVehicle = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newPlate || !newMake || !selectedDriverId) return
+    if (!newPlate || !newMake || !driverName) return
 
     try {
+      // First, create or find the driver
+      let driverId = null
+
+      // Try to find existing driver by name
+      const { data: existingDriver } = await supabase
+        .from("drivers")
+        .select("id")
+        .eq("full_name", driverName)
+        .single()
+
+      if (existingDriver) {
+        driverId = existingDriver.id
+      } else {
+        // Create new driver
+        const { data: newDriver, error: driverError } = await supabase
+          .from("drivers")
+          .insert({
+            full_name: driverName,
+            license_number: `AUTO-${Date.now()}`, // Auto-generate license number
+            phone: "N/A",
+            license_status: "active",
+            date_of_birth: "1990-01-01"
+          })
+          .select()
+          .single()
+
+        if (driverError) throw driverError
+        driverId = newDriver.id
+      }
+
+      // Now insert the vehicle
       const { error } = await supabase.from("vehicles").insert({
         plate_number: newPlate.toUpperCase(),
         make: newMake,
         model: newModel,
         year: new Date().getFullYear(),
         color: "Inconnu",
-        driver_id: selectedDriverId,
+        driver_id: driverId,
         vehicle_status: "active"
       })
 
@@ -100,6 +132,7 @@ export default function AdminDashboard({ operator }: { operator: Operator }) {
       setNewPlate("")
       setNewMake("")
       setNewModel("")
+      setDriverName("")
       loadData()
     } catch (err) {
       toast({ title: "Erreur", description: "Impossible d'enregistrer le véhicule.", variant: "destructive" })
@@ -224,6 +257,11 @@ export default function AdminDashboard({ operator }: { operator: Operator }) {
           </Card>
         </div>
 
+        {/* Live Scans Panel */}
+        <div className="mb-6">
+          <ScanLive />
+        </div>
+
         <Tabs defaultValue="vehicles" className="space-y-8">
           <TabsList className="bg-white/5 border border-white/10 p-1 rounded-2xl h-14">
             <TabsTrigger value="vehicles" className="rounded-xl px-8 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">
@@ -337,17 +375,13 @@ export default function AdminDashboard({ operator }: { operator: Operator }) {
                       </div>
                     </div>
                     <div className="grid gap-2">
-                      <Label className="text-xs font-bold uppercase tracking-widest text-zinc-400">Assigner un Chauffeur</Label>
-                      <Select onValueChange={setSelectedDriverId}>
-                        <SelectTrigger className="h-14 bg-white/5 border-white/10 rounded-2xl">
-                          <SelectValue placeholder="Sélectionner..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                          {drivers.map(d => (
-                            <SelectItem key={d.id} value={d.id}>{d.full_name} ({d.license_number})</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-zinc-400">Nom du Chauffeur</Label>
+                      <Input
+                        placeholder="Ex: Mamadou Diallo"
+                        className="h-14 bg-white/5 border-white/10 rounded-2xl placeholder:opacity-40"
+                        value={driverName}
+                        onChange={(e) => setDriverName(e.target.value)}
+                      />
                     </div>
                   </div>
                   <Button className="w-full h-14 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 font-bold transition-all hover:scale-[1.02]">

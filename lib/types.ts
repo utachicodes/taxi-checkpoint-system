@@ -25,6 +25,7 @@ export interface Vehicle {
   year: number
   color: string
   vehicle_status: VehicleStatus
+  type?: string
   insurance_expiry?: string
   last_inspection?: string
   created_at: string
