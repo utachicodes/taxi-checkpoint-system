@@ -7,9 +7,9 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'Contrôle TaxiGuard - République du Sénégal',
+  description: 'Système de Gestion des Points de Contrôle Taxi',
+  generator: 'Next.js',
   icons: {
     icon: [
       {
@@ -29,17 +29,21 @@ export const metadata: Metadata = {
   },
 }
 
+import { Toaster } from "@/components/ui/toaster"
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body className={`font-sans antialiased`}>
         {children}
+        <Toaster />
         <Analytics />
       </body>
     </html>
   )
 }
+

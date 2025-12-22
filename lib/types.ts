@@ -81,3 +81,14 @@ export interface Violation {
   is_paid: boolean
   created_at: string
 }
+
+export interface DailyPayment {
+  id: string
+  vehicle_id: string
+  payment_date: string
+  amount: number
+  is_paid: boolean
+  created_at: string
+  vehicle?: Vehicle
+}
+

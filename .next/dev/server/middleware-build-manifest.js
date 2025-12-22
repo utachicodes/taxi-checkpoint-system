@@ -1,0 +1,26 @@
+globalThis.__BUILD_MANIFEST = {
+  "pages": {
+    "/_app": []
+  },
+  "devFiles": [],
+  "polyfillFiles": [
+    "static/chunks/944cf_next_dist_build_polyfills_polyfill-nomodule.js"
+  ],
+  "lowPriorityFiles": [],
+  "rootMainFiles": [
+    "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_db934b8a._.js",
+    "static/chunks/944cf_next_dist_compiled_react-dom_ba526f77._.js",
+    "static/chunks/944cf_next_dist_compiled_react-server-dom-turbopack_9812766c._.js",
+    "static/chunks/944cf_next_dist_compiled_next-devtools_index_355a0f33.js",
+    "static/chunks/944cf_next_dist_compiled_3c18aaea._.js",
+    "static/chunks/944cf_next_dist_client_e5f4542b._.js",
+    "static/chunks/944cf_next_dist_4622e167._.js",
+    "static/chunks/944cf_@swc_helpers_cjs_ffd4ff9b._.js",
+    "static/chunks/80b58_Studio_Taxi-Checkpoint-Management-System_taxi-checkpoint-system_a0ff3932._.js",
+    "static/chunks/bf09e_Studio_Taxi-Checkpoint-Management-System_taxi-checkpoint-system_76ad5252._.js"
+  ]
+};
+globalThis.__BUILD_MANIFEST.lowPriorityFiles = [
+"/static/" + process.env.__NEXT_BUILD_ID + "/_buildManifest.js",
+"/static/" + process.env.__NEXT_BUILD_ID + "/_ssgManifest.js"
+];

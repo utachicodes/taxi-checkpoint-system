@@ -1,0 +1,50 @@
+{
+  "node": {
+    "40c6da10abb7235b9a0385982ce07d7890af4cf6d5": {
+      "workers": {
+        "app/admin/page": {
+          "moduleId": "[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/.next-internal/server/app/admin/page/actions.js { ACTIONS_MODULE0 => \"[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createOperatorAction",
+          "filename": "Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts"
+        }
+      },
+      "layer": {
+        "app/admin/page": "action-browser"
+      },
+      "exportedName": "createOperatorAction",
+      "filename": "Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts"
+    },
+    "007e13ac973a60f047cd6d666d91168cf666d2dc3f": {
+      "workers": {
+        "app/admin/page": {
+          "moduleId": "[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/.next-internal/server/app/admin/page/actions.js { ACTIONS_MODULE0 => \"[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getOperatorsAction",
+          "filename": "Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts"
+        }
+      },
+      "layer": {
+        "app/admin/page": "action-browser"
+      },
+      "exportedName": "getOperatorsAction",
+      "filename": "Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts"
+    },
+    "4029516d851c389a991c1b07ed5a6e18d81a05dd6a": {
+      "workers": {
+        "app/admin/page": {
+          "moduleId": "[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/.next-internal/server/app/admin/page/actions.js { ACTIONS_MODULE0 => \"[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "deleteOperatorAction",
+          "filename": "Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts"
+        }
+      },
+      "layer": {
+        "app/admin/page": "action-browser"
+      },
+      "exportedName": "deleteOperatorAction",
+      "filename": "Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts"
+    }
+  },
+  "edge": {}
+}

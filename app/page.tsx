@@ -1,151 +1,85 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Shield, Users, MapPin, CheckCircle, BarChart3, FileDown } from "lucide-react"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import HeroScene from "@/components/HeroScene"
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Shield className="h-8 w-8 text-[color:var(--gov-blue)]" />
-              <div className="absolute -top-1 -right-1 flex gap-0.5">
-                <div className="w-1 h-3 bg-[color:var(--senegal-green)]" />
-                <div className="w-1 h-3 bg-[color:var(--senegal-yellow)]" />
-                <div className="w-1 h-3 bg-[color:var(--senegal-red)]" />
-              </div>
-            </div>
-            <span className="text-xl font-bold text-slate-900">Contrôle TaxiGuard</span>
-          </div>
-          <nav className="flex items-center gap-4">
-            <Link href="/auth/login">
-              <Button className="bg-[color:var(--gov-blue)] hover:bg-[color:var(--gov-blue-dark)] text-white">
-                Connexion
-              </Button>
-            </Link>
-          </nav>
+    <div className="min-h-screen bg-[#050505] text-white selection:bg-yellow-500 selection:text-black no-scrollbar flex flex-col overflow-x-hidden">
+      {/* Header */}
+      <header className="absolute top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between max-w-7xl mx-auto w-full animate-fade-in-up">
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold tracking-tight text-white">
+            Taxi<span className="opacity-50 font-light">Guard</span>
+          </span>
+          <span className="hidden md:inline-block ml-4 text-xs font-medium tracking-[0.2em] uppercase opacity-40 border-l border-white/20 pl-4">
+            République du Sénégal
+          </span>
         </div>
+
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
+        </nav>
+
+        <Link href="/auth/login">
+          <Button className="rounded-full bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white px-6 border border-white/10 transition-all hover:scale-105 active:scale-95 duration-300">
+            Connexion
+          </Button>
+        </Link>
       </header>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="flex justify-center gap-2 mb-6">
-            <div className="w-16 h-1 bg-[color:var(--senegal-green)] rounded" />
-            <div className="w-16 h-1 bg-[color:var(--senegal-yellow)] rounded" />
-            <div className="w-16 h-1 bg-[color:var(--senegal-red)] rounded" />
-          </div>
-          <h1 className="text-5xl font-bold text-slate-900 mb-6 text-balance">
-            Système de Gestion des Points de Contrôle Taxi
-          </h1>
-          <p className="text-xl text-slate-600 mb-8 text-pretty">
-            Rationalisez les opérations d'application de la loi avec la vérification des conducteurs en temps réel, le
-            suivi des points de contrôle et la gestion complète des violations.
-          </p>
-          <div className="flex gap-4 justify-center flex-wrap">
-            <Link href="/auth/login">
-              <Button size="lg" className="bg-[color:var(--gov-blue)] hover:bg-[color:var(--gov-blue-dark)] text-white">
-                Accès au Système
-              </Button>
-            </Link>
-          </div>
+      {/* Main Content */}
+      <main className="flex-1 flex items-center relative w-full pt-20">
+
+        {/* Desktop Hero Scene (Absolute Right Half) */}
+        <div className="hidden md:block absolute top-0 right-0 w-[50vw] h-full z-0">
+          <HeroScene />
         </div>
-      </section>
 
-      <section className="container mx-auto px-4 py-16">
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="border-t-4 border-t-[color:var(--senegal-green)]">
-            <CardHeader>
-              <Shield className="h-10 w-10 text-[color:var(--gov-blue)] mb-2" />
-              <CardTitle>Vérification en Temps Réel</CardTitle>
-              <CardDescription>
-                Vérifications instantanées du permis et du statut du véhicule aux points de contrôle
-              </CardDescription>
-            </CardHeader>
-          </Card>
+        {/* Content Container */}
+        <div className="max-w-7xl mx-auto w-full px-8 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 w-full h-full items-center">
 
-          <Card className="border-t-4 border-t-[color:var(--senegal-yellow)]">
-            <CardHeader>
-              <Users className="h-10 w-10 text-[color:var(--senegal-green)] mb-2" />
-              <CardTitle>Accès Multi-Portail</CardTitle>
-              <CardDescription>
-                Interfaces séparées pour les opérateurs de terrain et les administrateurs système
-              </CardDescription>
-            </CardHeader>
-          </Card>
+            {/* Left Column: Typography */}
+            <div className="space-y-8">
+              <h1 className="text-5xl md:text-7xl font-bold leading-[0.95] tracking-tight text-white animate-fade-in-up delay-100">
+                Sécurité <br />
+                et contrôle <br />
+                <span className="text-gradient-gold">intelligents.</span>
+              </h1>
 
-          <Card className="border-t-4 border-t-[color:var(--senegal-red)]">
-            <CardHeader>
-              <MapPin className="h-10 w-10 text-[color:var(--senegal-red)] mb-2" />
-              <CardTitle>Suivi des Points de Contrôle</CardTitle>
-              <CardDescription>
-                Surveiller toutes les activités des points de contrôle et les performances des opérateurs
-              </CardDescription>
-            </CardHeader>
-          </Card>
+              <p className="max-w-md text-gray-400 text-lg leading-relaxed animate-fade-in-up delay-200">
+                La plateforme officielle de gestion des points de contrôle pour la
+                <span className="text-white font-medium"> modernisation du transport </span>
+                au Sénégal.
+              </p>
 
-          <Card className="border-t-4 border-t-[color:var(--gov-blue)]">
-            <CardHeader>
-              <CheckCircle className="h-10 w-10 text-[color:var(--gov-blue)] mb-2" />
-              <CardTitle>Gestion des Violations</CardTitle>
-              <CardDescription>Historique complet des violations et suivi des paiements d'amendes</CardDescription>
-            </CardHeader>
-          </Card>
+              <div className="pt-4 flex gap-4 animate-fade-in-up delay-300">
+                <Link href="/auth/login">
+                  <Button className="cursor-pointer rounded-full h-12 px-8 bg-white text-black hover:bg-gray-200 transition-all hover:scale-105 active:scale-95 duration-300 text-base font-semibold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)]">
+                    Accéder au système
+                  </Button>
+                </Link>
 
-          <Card className="border-t-4 border-t-[color:var(--senegal-green)]">
-            <CardHeader>
-              <BarChart3 className="h-10 w-10 text-[color:var(--senegal-yellow)] mb-2" />
-              <CardTitle>Analyses et Rapports</CardTitle>
-              <CardDescription>Tableaux de bord complets avec graphiques et visualisations de données</CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-t-4 border-t-[color:var(--senegal-yellow)]">
-            <CardHeader>
-              <FileDown className="h-10 w-10 text-[color:var(--senegal-red)] mb-2" />
-              <CardTitle>Export de Données</CardTitle>
-              <CardDescription>Exportation des rapports en formats PDF et Excel pour l'archivage</CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="bg-white rounded-lg p-8 shadow-sm border-t-4 border-t-[color:var(--gov-blue)]">
-          <h2 className="text-3xl font-bold text-center mb-12">Aperçu du Système</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[color:var(--gov-blue)] mb-2">24/7</div>
-              <div className="text-slate-600">Surveillance des Points de Contrôle</div>
+                <Link href="/about">
+                  <Button variant="outline" className="cursor-pointer rounded-full h-12 px-8 bg-transparent border border-white/20 text-white hover:bg-white/10 transition-all hover:scale-105 active:scale-95 duration-300 text-base backdrop-blur-sm">
+                    En savoir plus
+                  </Button>
+                </Link>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[color:var(--senegal-green)] mb-2">100%</div>
-              <div className="text-slate-600">Sécurité RLS</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-[color:var(--senegal-red)] mb-2">Temps Réel</div>
-              <div className="text-slate-600">Synchronisation des Données</div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="border-t bg-white mt-16">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-center gap-2 mb-4">
-            <div className="w-12 h-1 bg-[color:var(--senegal-green)] rounded" />
-            <div className="w-12 h-1 bg-[color:var(--senegal-yellow)] rounded" />
-            <div className="w-12 h-1 bg-[color:var(--senegal-red)] rounded" />
+            {/* Mobile Hero Scene (Stacked) */}
+            <div className="md:hidden h-[500px] w-full relative animate-fade-in-up delay-500">
+              <HeroScene />
+            </div>
+
           </div>
-          <p className="text-center text-slate-600">
-            &copy; 2025 Contrôle TaxiGuard. Système de gestion des points de contrôle certifié gouvernemental.
-          </p>
         </div>
-      </footer>
+      </main>
+
+      {/* Background Gradient Spot */}
+      <div className="fixed top-[-20%] right-[-10%] w-[600px] h-[600px] bg-red-600/10 blur-[120px] rounded-full pointer-events-none z-0 mix-blend-screen animate-pulse duration-[4000ms]" />
+      <div className="fixed bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-green-600/5 blur-[120px] rounded-full pointer-events-none z-0 mix-blend-screen animate-pulse duration-[5000ms]" />
+
     </div>
   )
 }
