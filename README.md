@@ -1,32 +1,32 @@
-# TaxiGuard: Enterprise Municipal Checkpoint System 🚕🛡️
+# TaxiGuard: Enterprise Municipal Checkpoint System
 
-![Version](https://img.shields.io/badge/Version-2.0.0-blue?style=for-the-badge&logo=git)
-![Status](https://img.shields.io/badge/Status-Production%20Ready-green?style=for-the-badge)
-![Tech](https://img.shields.io/badge/Stack-Next.js%20%7C%20Django%20%7C%20Supabase-black?style=for-the-badge&logo=vercel)
-![AI](https://img.shields.io/badge/AI-YOLO%20%2B%20Qwen-orange?style=for-the-badge&logo=openai)
+![Version](https://img.shields.io/badge/Version-2.0.0-blue?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Production%20Ready-green?style=flat-square)
+![Tech](https://img.shields.io/badge/Stack-Next.js%20%7C%20Django%20%7C%20Supabase-black?style=flat-square)
+![AI](https://img.shields.io/badge/AI-YOLO%20%2B%20Qwen-orange?style=flat-square)
 
-**TaxiGuard** is an AI-powered automated checkpoint platform designed to modernize municipal revenue collection and traffic regulation in Senegal. It replaces manual, paper-based verification with a high-speed, zero-touch computer vision system.
+**TaxiGuard** is an AI-powered automated checkpoint platform designed to modernize municipal revenue collection and traffic regulation. It replaces manual verification with a high-speed, zero-touch computer vision system.
 
 ---
 
-## ⚡ Key Features
+## Key Features
 
 *   **"Two-Brain" AI Engine**:
     *   **Edge**: YOLOv8 Nano for 50ms vehicle detection (Local CPU).
     *   **Cloud**: Qwen2-VL (7B) for high-precision License Plate Recognition (OCR).
 *   **Zero-Lag Operations**:
-    *   **Recursive Polling System**: Guarantees no network request stacking, ensuring stability even on 4G.
-    *   **In-Memory Pipeline**: Images are processed in RAM (YOLO -> Crop -> API) without touching the hard disk, reducing latency by 90%.
-*   **Fiscal "Pass or Pay" Logic**:
+    *   **Recursive Polling System**: Guarantees no network request stacking, ensuring stability even on constrained networks.
+    *   **In-Memory Pipeline**: Images are processed in RAM (YOLO -> Crop -> API) without disk I/O, significantly reducing latency.
+*   **Fiscal Logic**:
     *   Automatic lookup of vehicle registration and daily tax status.
-    *   instant "Green Light" / "Red Light" operator feedback.
+    *   Instant "Green Light" / "Red Light" operator feedback.
 *   **Real-Time Sync**: Supabase WebSockets push scan events to the dashboard instantly.
 
 ---
 
-## 🏗️ Technical Architecture
+## Technical Architecture
 
-TaxiGuard utilizes a **Hybrid Edge-Cloud Architecture** to minimize costs and maximize speed.
+TaxiGuard utilizing a **Hybrid Edge-Cloud Architecture**.
 
 ```mermaid
 sequenceDiagram
@@ -61,19 +61,19 @@ sequenceDiagram
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Component | Technology | Rationale |
 | :--- | :--- | :--- |
 | **Frontend** | **Next.js 14** (TypeScript) | Type-safe, high-performance UI with Server Actions. |
-| **Backend** | **Django 5.0** (Python) | Robust API handling and easiest integration with PyTorch/AI libs. |
+| **Backend** | **Django 5.0** (Python) | Robust API handling and integration with AI libraries. |
 | **Database** | **Supabase** (Postgres) | Real-time subscriptions and Row Level Security (RLS). |
-| **AI Inference** | **Ultralytics + OpenRouter** | Best-in-class object detection paired with semantic vision capabilities. |
+| **AI Inference** | **Ultralytics + OpenRouter** | Object detection paired with semantic vision capabilities. |
 | **Deployment** | **Vercel + Local** | Hybrid deployment for low-latency edge caching. |
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 *   Node.js 18+
@@ -111,7 +111,7 @@ sequenceDiagram
 
 ---
 
-## 🔒 Security
+## Security
 
 *   **RBAC**: Strict role separation between Operators (Read/Write Payments) and Admins (Full Access).
 *   **Audit Trail**: Every AI detection creates an immutable record in `scan_events`.
@@ -119,7 +119,7 @@ sequenceDiagram
 
 ---
 
-## 📄 License & Credits
+## License & Credits
 
 **Copyright © 2025 UtachiCodes.**  
 Built for the **Municipality of Somone**.  
