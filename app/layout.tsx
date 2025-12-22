@@ -10,23 +10,6 @@ export const metadata: Metadata = {
   title: 'Contrôle TaxiGuard - République du Sénégal',
   description: 'Système de Gestion des Points de Contrôle Taxi',
   generator: 'Next.js',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
 }
 
 import { Toaster } from "@/components/ui/toaster"

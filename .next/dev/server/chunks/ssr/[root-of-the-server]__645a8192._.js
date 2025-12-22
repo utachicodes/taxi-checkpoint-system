@@ -111,24 +111,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$Innovation_Stud
 const metadata = {
     title: 'Contrôle TaxiGuard - République du Sénégal',
     description: 'Système de Gestion des Points de Contrôle Taxi',
-    generator: 'Next.js',
-    icons: {
-        icon: [
-            {
-                url: '/icon-light-32x32.png',
-                media: '(prefers-color-scheme: light)'
-            },
-            {
-                url: '/icon-dark-32x32.png',
-                media: '(prefers-color-scheme: dark)'
-            },
-            {
-                url: '/icon.svg',
-                type: 'image/svg+xml'
-            }
-        ],
-        apple: '/apple-icon.png'
-    }
+    generator: 'Next.js'
 };
 ;
 function RootLayout({ children }) {
@@ -141,23 +124,23 @@ function RootLayout({ children }) {
                 children,
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$Innovation_Studio$2f$Taxi$2d$Checkpoint$2d$Management$2d$System$2f$taxi$2d$checkpoint$2d$system$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$Innovation_Studio$2f$Taxi$2d$Checkpoint$2d$Management$2d$System$2f$taxi$2d$checkpoint$2d$system$2f$components$2f$ui$2f$toaster$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Toaster"], {}, void 0, false, {
                     fileName: "[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/app/layout.tsx",
-                    lineNumber: 43,
+                    lineNumber: 26,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$Innovation_Studio$2f$Taxi$2d$Checkpoint$2d$Management$2d$System$2f$taxi$2d$checkpoint$2d$system$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$Innovation_Studio$2f$Taxi$2d$Checkpoint$2d$Management$2d$System$2f$taxi$2d$checkpoint$2d$system$2f$node_modules$2f40$vercel$2f$analytics$2f$dist$2f$next$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Analytics"], {}, void 0, false, {
                     fileName: "[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/app/layout.tsx",
-                    lineNumber: 44,
+                    lineNumber: 27,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/app/layout.tsx",
-            lineNumber: 41,
+            lineNumber: 24,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/app/layout.tsx",
-        lineNumber: 40,
+        lineNumber: 23,
         columnNumber: 5
     }, this);
 }
