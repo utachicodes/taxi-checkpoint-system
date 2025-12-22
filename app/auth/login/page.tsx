@@ -69,9 +69,6 @@ export default function LoginPage() {
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between max-w-7xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-2 group transition-all duration-300">
-          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-            <Shield className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-          </div>
           <span className="text-xl font-bold tracking-tight text-white">
             Taxi<span className="opacity-50 font-light">Guard</span>
           </span>
@@ -108,7 +105,7 @@ export default function LoginPage() {
                   />
                 </div>
                 <div className="grid gap-2 group">
-                  <Label htmlFor="password" name="password-label" className="text-xs font-bold uppercase tracking-widest text-zinc-400 ml-1 group-focus-within:text-white transition-colors">Mot de Passe</Label>
+                  <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-zinc-400 ml-1 group-focus-within:text-white transition-colors">Mot de Passe</Label>
                   <Input
                     id="password"
                     type="password"

@@ -230,25 +230,26 @@ function LandingPage() {
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$Innovation_Studio$2f$Taxi$2d$Checkpoint$2d$Management$2d$System$2f$taxi$2d$checkpoint$2d$system$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
                                             className: "text-5xl md:text-7xl font-bold leading-[0.95] tracking-tight text-white animate-fade-in-up delay-100",
                                             children: [
-                                                "Sécurité ",
+                                                "La garde ",
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$Innovation_Studio$2f$Taxi$2d$Checkpoint$2d$Management$2d$System$2f$taxi$2d$checkpoint$2d$system$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("br", {}, void 0, false, {
                                                     fileName: "[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/app/page.tsx",
                                                     lineNumber: 44,
                                                     columnNumber: 26
                                                 }, this),
-                                                "et contrôle ",
+                                                "intelligente ",
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$Innovation_Studio$2f$Taxi$2d$Checkpoint$2d$Management$2d$System$2f$taxi$2d$checkpoint$2d$system$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("br", {}, void 0, false, {
                                                     fileName: "[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/app/page.tsx",
                                                     lineNumber: 45,
-                                                    columnNumber: 29
+                                                    columnNumber: 30
                                                 }, this),
+                                                "du ",
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$Innovation_Studio$2f$Taxi$2d$Checkpoint$2d$Management$2d$System$2f$taxi$2d$checkpoint$2d$system$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                     className: "text-gradient-gold",
-                                                    children: "intelligents."
+                                                    children: "transport."
                                                 }, void 0, false, {
                                                     fileName: "[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/app/page.tsx",
                                                     lineNumber: 46,
-                                                    columnNumber: 17
+                                                    columnNumber: 20
                                                 }, this)
                                             ]
                                         }, void 0, true, {
@@ -259,16 +260,16 @@ function LandingPage() {
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$Innovation_Studio$2f$Taxi$2d$Checkpoint$2d$Management$2d$System$2f$taxi$2d$checkpoint$2d$system$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                             className: "max-w-md text-gray-400 text-lg leading-relaxed animate-fade-in-up delay-200",
                                             children: [
-                                                "La plateforme officielle de gestion des points de contrôle pour la",
+                                                "L'écosystème numérique de confiance pour la",
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$Innovation_Studio$2f$Taxi$2d$Checkpoint$2d$Management$2d$System$2f$taxi$2d$checkpoint$2d$system$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                     className: "text-white font-medium",
-                                                    children: " modernisation du transport "
+                                                    children: " surveillance et régularisation "
                                                 }, void 0, false, {
                                                     fileName: "[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/app/page.tsx",
                                                     lineNumber: 51,
                                                     columnNumber: 17
                                                 }, this),
-                                                "au Sénégal."
+                                                "des taxis au Sénégal."
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/app/page.tsx",

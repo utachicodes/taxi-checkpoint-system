@@ -1,0 +1,96 @@
+// Auto-Scan useEffect - Insert after line 133
+
+useEffect(() => {
+  if (!autoScanEnabled || !hasCameraAccess || !videoRef.current) return
+
+  const captureAndSend = async () => {
+    if (!videoRef.current) return
+    
+    try {
+      const canvas = document.createElement('canvas')
+      canvas.width = videoRef.current.videoWidth
+      canvas.height = videoRef.current.videoHeight
+      const ctx = canvas.getContext('2d')
+      
+      if (!ctx) return
+      ctx.drawImage(videoRef.current, 0, 0)
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) return
+        
+        setIsScanning(true)
+        setScanStatus("searching")
+        
+        const formData = new FormData()
+        formData.append('image', blob, 'capture.jpg')
+        formData.append('location', 'Somone - Hub Principal')
+        
+        try {
+          const response = await fetch('http://localhost:8000/api/v1/ocr/', {
+            method: 'POST',
+            body: formData
+          })
+          
+          if (response.ok) {
+            const result = await response.json()
+            const detections = result.detections || []
+            if (detections.length > 0 && detections[0].ocr && detections[0].ocr.length > 0) {
+              const plateText = detections[0].ocr[0].text
+              
+              if (plateText) {
+                const { data: vehicleData } = await supabase
+                  .from("vehicles")
+                  .select("*, driver:drivers(*)")
+                  .eq("plate_number", plateText.toUpperCase())
+                  .single()
+                
+                if (vehicleData) {
+                  setVehicle(vehicleData as Vehicle)
+                  setDriver(vehicleData.driver as Driver)
+                  setSearchQuery(plateText)
+                  setScanStatus("found")
+                  
+                  const today = new Date().toISOString().split("T")[0]
+                  const { data: payment } = await supabase
+                    .from("daily_payments")
+                    .select("*")
+                    .eq("vehicle_id", vehicleData.id)
+                    .eq("payment_date", today)
+                    .single()
+                  
+                  setDailyPayment(payment as DailyPayment)
+                  
+                  if (payment) {
+                    playAlert("success")
+                    toast({ title: "Scanner AI", description: `Plaque: ${plateText} - Conforme.` })
+                  } else {
+                    playAlert("warning")
+                    toast({ title: "Alerte", description: `${plateText} - Paiement manquant!`, variant: "destructive" })
+                  }
+                  
+                  setHistory(prev => [{
+                    ...vehicleData,
+                    paid: !!payment,
+                    time: new Date().toLocaleTimeString()
+                  }, ...prev.slice(0, 9)])
+                } else {
+                  setScanStatus("not_found")
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Auto-scan error:', error)
+        } finally {
+          setIsScanning(false)
+        }
+      }, 'image/jpeg', 0.8)
+    } catch (error) {
+      console.error('Capture error:', error)
+      setIsScanning(false)
+    }
+  }
+
+  const interval = setInterval(captureAndSend, 5000)
+  return () => clearInterval(interval)
+}, [autoScanEnabled, hasCameraAccess, supabase, toast])

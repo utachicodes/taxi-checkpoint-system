@@ -7,8 +7,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Contrôle TaxiGuard - République du Sénégal',
-  description: 'Système de Gestion des Points de Contrôle Taxi',
+  title: 'TaxiGuard - République du Sénégal',
+  description: 'Plateforme Intelligente de Gestion des Points de Contrôle',
   generator: 'Next.js',
 }
 
