@@ -265,7 +265,8 @@ class ApiService:
             import io
             import base64
             from .local_inference_service import LocalInferenceService
-            from .qwen_client import get_qwen_client, LPR_PROMPT, parse_lpr_response
+            from .qwen_client import get_qwen_client, parse_lpr_response
+            from .local_ocr_service import LocalOCRService
             
             # 1. Read file to memory
             file_content = uploaded_file.read()
@@ -295,10 +296,47 @@ class ApiService:
             
             # 5. Call Cloud AI (Qwen)
             client = get_qwen_client()
-            api_response = client.analyze_image(img_str, LPR_PROMPT)
+            api_response = client.analyze_image(img_str)
             
             if not api_response:
-                return {'success': False, 'error': 'API call failed'}, None
+                import tempfile, os
+                tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+                try:
+                    tmp.write(buffered.getvalue())
+                    tmp.flush()
+                    ocr = LocalOCRService.read_plate(tmp.name)
+                finally:
+                    tmp.close()
+                    try:
+                        os.unlink(tmp.name)
+                    except Exception:
+                        pass
+                if not ocr:
+                    return {'success': False, 'error': 'API call failed'}, None
+                processing_time = int((time.time() - start_time) * 1000)
+                fallback_response = {
+                    'detections': [
+                        {
+                            'plate': {
+                                'coordinates': {},
+                                'confidence': 0
+                            },
+                            'ocr': [
+                                {
+                                    'text': ocr.get('text', ''),
+                                    'confidence': ocr.get('confidence', 0.0)
+                                }
+                            ]
+                        }
+                    ]
+                }
+                return {
+                    'success': True,
+                    'is_vehicle': True,
+                    'results': fallback_response,
+                    'processing_time_ms': processing_time,
+                    'image_saved': False
+                }, None
                 
             # 6. Parse Response
             # We use original dimensions for both source and target since we want relative coords or 
