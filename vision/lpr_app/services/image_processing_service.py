@@ -14,10 +14,11 @@ from typing import Dict, Any, Optional
 from django.conf import settings
 
 from ..models import UploadedImage, ProcessingLog
-from .qwen_client import get_qwen_client, LPR_PROMPT, parse_lpr_response
+from .qwen_client import get_qwen_client, parse_lpr_response
 from .image_processor import ImageProcessor
 from .local_inference_service import LocalInferenceService
 from .bbox_visualizer import visualize_lpr_on_image, create_side_by_side_comparison
+from .local_ocr_service import LocalOCRService
 
 logger = logging.getLogger(__name__)
 
@@ -95,20 +96,53 @@ class ImageProcessingService:
             if not base64_image:
                 return {'success': False, 'error': 'Failed to encode image'}
             
-            # Call Qwen3-VL API with customized prompt
+            # Call Qwen3-VL API
             client = get_qwen_client()
-            # Customize prompt with actual filename
-            customized_prompt = LPR_PROMPT.replace('[actual filename of the image]', uploaded_image.filename)
-            api_response = client.analyze_image(base64_image, customized_prompt)
+            api_response = client.analyze_image(base64_image)
             
             if not api_response:
-                return {'success': False, 'error': 'API call failed'}
-            
-            # Parse response with coordinate scaling
-            parsed_response = parse_lpr_response(api_response, original_h, original_w, resized_h, resized_w)
+                ocr = LocalOCRService.read_plate(prepared_path)
+                if not ocr:
+                    return {'success': False, 'error': 'API call failed'}
+                parsed_response = {
+                    'detections': [
+                        {
+                            'plate': {
+                                'coordinates': {},
+                                'confidence': 0
+                            },
+                            'ocr': [
+                                {
+                                    'text': ocr.get('text', ''),
+                                    'confidence': ocr.get('confidence', 0.0)
+                                }
+                            ]
+                        }
+                    ]
+                }
+            else:
+                parsed_response = parse_lpr_response(api_response, original_h, original_w, resized_h, resized_w)
             
             if not parsed_response:
-                return {'success': False, 'error': 'Failed to parse API response'}
+                ocr = LocalOCRService.read_plate(prepared_path)
+                if not ocr:
+                    return {'success': False, 'error': 'Failed to parse API response'}
+                parsed_response = {
+                    'detections': [
+                        {
+                            'plate': {
+                                'coordinates': {},
+                                'confidence': 0
+                            },
+                            'ocr': [
+                                {
+                                    'text': ocr.get('text', ''),
+                                    'confidence': ocr.get('confidence', 0.0)
+                                }
+                            ]
+                        }
+                    ]
+                }
             
             # Conditionally visualize and save processed images
             output_path = None
