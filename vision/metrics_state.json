@@ -1,0 +1,18 @@
+{
+  "upload_total_success": 0.0,
+  "upload_total_failed": 0.0,
+  "upload_total_error": 0.0,
+  "processing_total_completed": 0.0,
+  "processing_total_failed": 0.0,
+  "processing_total_error": 0.0,
+  "plates_detected_total": 0.0,
+  "ocr_texts_detected_total": 0.0,
+  "detection_accuracy": 0.0,
+  "images_in_storage": 0.0,
+  "api_health_status": 0.0,
+  "processing_queue_size": 0.0,
+  "file_storage_size_bytes": 0.0,
+  "canary_requests_success": 0.0,
+  "canary_requests_failed": 0.0,
+  "canary_requests_error": 0.0
+}

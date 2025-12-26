@@ -16,7 +16,7 @@ from django.views.decorators.http import require_http_methods
 from ..models import UploadedImage
 from ..services.api_service import ApiService
 from ..services.image_processing_service import ImageProcessingService
-from ..services.qwen_client import get_qwen_client
+from ..services.gemini_client import get_gemini_client
 from ..services.supabase_service import SupabaseService
 from ..metrics import get_metrics_response
 from ..utils.metrics_helpers import MetricsHelper, PerformanceTracker
@@ -172,7 +172,7 @@ def api_health_check(request):
     """
     try:
         with PerformanceTracker('api_request') as tracker:
-            client = get_qwen_client()
+            client = get_gemini_client()
             api_healthy = client.health_check()
             
             from django.db import connection

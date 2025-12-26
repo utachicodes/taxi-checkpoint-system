@@ -38,24 +38,24 @@ TaxiGuard employs a **Hybrid Edge-Cloud Architecture** designed to balance low l
 To optimize for both speed and accuracy, the system decouples "Detection" from "Recognition":
 
 #### Layer 1: The "Spotter" (Edge Intelligence)
-*   **Model**: YOLOv8 Nano (You Only Look Once).
+*   **Model**: **RF-DETR Nano** (Roboflow Detection Transformer) / **YOLOv8 Nano** (Fallback).
 *   **Host**: Local Operator Device (CPU Inference).
 *   **Role**: High-frequency gatekeeper. It processes the video feed at 30 FPS.
 *   **Logic**:
     *   Input: Raw Video Frame (1280x720).
-    *   Task: Binary Classification & Bounding Box Regression (Is there a vehicle? Where?).
-    *   Output: If `Confidence > 0.5` -> Crop image and pass to Layer 2. Else -> Discard.
-*   **Advantage**: Filters out 90% of empty frames locally, reducing bandwidth usage to near zero when no cars are present.
+    *   Task: Real-time Object Detection (Car, Motorcycle, Bus, Truck).
+    *   Output: If `Confidence > 0.25` -> Crop image and pass to Layer 2. Else -> Discard.
+*   **Advantage**: RF-DETR provides higher accuracy than standard YOLO models for vehicle detection while maintaining real-time performance on CPU.
 
 #### Layer 2: The "Reader" (Cloud Intelligence)
-*   **Model**: Qwen2-VL (7 Billion Parameters).
-*   **Host**: High-Performance GPU Cluster (OpenRouter API).
+*   **Model**: **Gemini 1.5 Flash** (Google Cloud AI).
+*   **Host**: Google Cloud (Vertex AI / Studio).
 *   **Role**: Visual Reasoning & OCR.
 *   **Logic**:
     *   Input: Cropped, downscaled vehicle image (< 100KB).
-    *   Task: "Read the license plate in this image and return JSON."
+    *   Task: "Read the license plate in this image and return structured JSON."
     *   Output: `{"plate": "DK-1234-AN"}`.
-*   **Advantage**: Unlike traditional OCR (Tesseract) which fails with dirty plates or angles, Qwen-VL uses semantic understanding to "read" text like a human.
+*   **Advantage**: Gemini 1.5 Flash offers superior multimodal reasoning, allowing it to interpret license plates even in difficult lighting or angles where traditional OCR fails.
 
 ### 3.2 High-Level Data Flow Diagram (Mermaid)
 
@@ -64,8 +64,8 @@ sequenceDiagram
     participant Cam as Camera Input
     participant FE as Frontend (Next.js)
     participant BE as Backend (Django)
-    participant YOLO as Local YOLOv8
-    participant Cloud as Cloud AI (Qwen)
+    participant RFDETR as Local RF-DETR
+    participant Gemini as Cloud AI (Gemini)
     participant DB as Supabase DB
 
     Cam->>FE: Capture Frame (Video Feed)
@@ -74,15 +74,16 @@ sequenceDiagram
     
     activate BE
     BE->>BE: Read Image to Memory (No Disk I/O)
-    BE->>YOLO: Detect Vehicle?
+    BE->>RFDETR: Detect Vehicle?
     
     alt No Vehicle
-        YOLO-->>BE: False
+        RFDETR-->>BE: False
         BE-->>FE: Response: {success: true, found: false}
     else Vehicle Found
-        YOLO-->>BE: True (Bounding Box)
-        BE->>Cloud: POST Image (Base64)
-        Cloud-->>BE: JSON: {plate: "DK-2929-X"}
+        RFDETR-->>BE: True (Bounding Box)
+        BE->>Gemini: POST Image (Base64)
+        Gemini-->>BE: JSON: {plate: "DK-2929-X"}
+
         BE->>DB: Log Scan Event (Audit Trail)
         BE-->>FE: Response: {plate: "DK-2929-X"}
     end

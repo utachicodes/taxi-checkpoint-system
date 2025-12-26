@@ -49,13 +49,16 @@ CREATE TABLE IF NOT EXISTS checkpoints (
 -- Operators (users) table
 CREATE TABLE IF NOT EXISTS operators (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  full_name TEXT NOT NULL,
-  badge_number TEXT UNIQUE NOT NULL,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  phone_number TEXT,
   role TEXT DEFAULT 'operator',
   checkpoint_id UUID REFERENCES checkpoints(id) ON DELETE SET NULL,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Operator update trigger will be created after function definition
 
 -- Checkpoint records table
 CREATE TABLE IF NOT EXISTS checkpoint_records (
@@ -151,4 +154,7 @@ CREATE TRIGGER update_drivers_updated_at BEFORE UPDATE ON drivers
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_vehicles_updated_at BEFORE UPDATE ON vehicles
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_operators_updated_at BEFORE UPDATE ON operators
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

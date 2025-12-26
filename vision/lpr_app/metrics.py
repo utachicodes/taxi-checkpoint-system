@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 REGISTRY = CollectorRegistry()
 
 # File-based persistence
-METRICS_FILE_PATH = getattr(settings, 'METRICS_FILE_PATH', '/app/metrics/metrics_state.json')
+# File-based persistence
+LOG_DIR = getattr(settings, 'LOG_DIR', os.path.dirname(os.path.abspath(__file__)))
+METRICS_FILE_PATH = getattr(settings, 'METRICS_FILE_PATH', os.path.join(LOG_DIR, 'metrics_state.json'))
 _persistence_lock = threading.Lock()
 
 # Application Performance Metrics

@@ -1,31 +1,6 @@
 {
   "sorted_middleware": [],
-  "middleware": {
-    "/": {
-      "files": [
-        "server/edge/chunks/eabec_Taxi-Checkpoint-Management-System_taxi-checkpoint-system_edge-wrapper_2322f94e.js",
-        "server/edge/chunks/[root-of-the-server]__aa995cfa._.js",
-        "server/edge/chunks/00553_Taxi-Checkpoint-Management-System_taxi-checkpoint-system_edge-wrapper_835586bb.js"
-      ],
-      "name": "middleware",
-      "page": "/",
-      "matchers": [
-        {
-          "regexp": "/:nextData(_next/data/[^/]{1,})?/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*){(\\\\.json)}?",
-          "originalSource": "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"
-        }
-      ],
-      "wasm": [],
-      "assets": [],
-      "env": {
-        "__NEXT_BUILD_ID": "KpxWzHLgLLBI3q6uzDf5h",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "gdiOzkXexHggMjvBlBQOEqNXZWADlt30jd2YLA+Wubs=",
-        "__NEXT_PREVIEW_MODE_ID": "ca1ee9796cac9c3d4f133f9c5356e68f",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "975ded6edea8131885d1f8dc5f28bbaf33c4ddec9b72d1d2a7f200cd545eea88",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "c2251a5a8c8be58e27861d578a0d0cd26878f9c60fd70b5d90fb2fe41f36279f"
-      }
-    }
-  },
+  "middleware": {},
   "instrumentation": null,
   "functions": {}
 }

@@ -34,5 +34,29 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Add some sample registered vehicles if they don't exist
--- (Assuming vehicles table already has data from previous seeds)
+-- Seed sample daily payments for existing vehicles
+-- These inserts are idempotent and will not duplicate for the same day
+
+INSERT INTO daily_payments (vehicle_id, payment_date, amount, is_paid)
+SELECT (SELECT id FROM vehicles WHERE plate_number = 'DK-123-AB'), CURRENT_DATE, 500, true
+WHERE NOT EXISTS (
+  SELECT 1 FROM daily_payments dp
+  WHERE dp.vehicle_id = (SELECT id FROM vehicles WHERE plate_number = 'DK-123-AB')
+    AND dp.payment_date = CURRENT_DATE
+);
+
+INSERT INTO daily_payments (vehicle_id, payment_date, amount, is_paid)
+SELECT (SELECT id FROM vehicles WHERE plate_number = 'TH-456-CD'), CURRENT_DATE, 500, true
+WHERE NOT EXISTS (
+  SELECT 1 FROM daily_payments dp
+  WHERE dp.vehicle_id = (SELECT id FROM vehicles WHERE plate_number = 'TH-456-CD')
+    AND dp.payment_date = CURRENT_DATE
+);
+
+INSERT INTO daily_payments (vehicle_id, payment_date, amount, is_paid)
+SELECT (SELECT id FROM vehicles WHERE plate_number = 'LG-789-EF'), CURRENT_DATE, 500, false
+WHERE NOT EXISTS (
+  SELECT 1 FROM daily_payments dp
+  WHERE dp.vehicle_id = (SELECT id FROM vehicles WHERE plate_number = 'LG-789-EF')
+    AND dp.payment_date = CURRENT_DATE
+);

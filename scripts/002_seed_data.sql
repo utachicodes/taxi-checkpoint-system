@@ -6,20 +6,23 @@ INSERT INTO checkpoints (name, location, latitude, longitude, checkpoint_type) V
 
 -- Insert sample drivers
 INSERT INTO drivers (license_number, full_name, phone, email, date_of_birth, license_status) VALUES
-  ('DL-2024-001', 'John Kamau', '+254712345678', 'john.kamau@email.com', '1985-03-15', 'active'),
-  ('DL-2024-002', 'Mary Wanjiku', '+254723456789', 'mary.wanjiku@email.com', '1990-07-22', 'active'),
-  ('DL-2024-003', 'Peter Omondi', '+254734567890', 'peter.omondi@email.com', '1988-11-30', 'active'),
-  ('DL-2024-004', 'Grace Achieng', '+254745678901', 'grace.achieng@email.com', '1992-05-18', 'suspended');
+  ('SN-DL-987654', 'Amina Diallo', '+221771234567', 'amina.diallo@email.com', '1985-03-15', 'active'),
+  ('SN-DL-123456', 'Moussa Sow', '+221778765432', 'moussa.sow@email.com', '1990-07-22', 'active'),
+  ('SN-DL-654321', 'Fatou Ndiaye', '+221772345678', 'fatou.ndiaye@email.com', '1988-11-30', 'suspended');
 
 -- Insert sample vehicles
 INSERT INTO vehicles (plate_number, make, model, year, color, insurance_expiry, last_inspection) VALUES
-  ('KAA-123B', 'Toyota', 'Corolla', 2020, 'White', '2025-06-30', '2024-12-01'),
-  ('KBB-456C', 'Nissan', 'Note', 2019, 'Silver', '2025-08-15', '2024-11-20'),
-  ('KCC-789D', 'Honda', 'Fit', 2021, 'Blue', '2025-05-20', '2024-10-15'),
-  ('KDD-012E', 'Mazda', 'Demio', 2018, 'Red', '2024-12-31', '2024-09-30');
+  ('DK-123-AB', 'Toyota', 'Corolla', 2020, 'White', '2025-06-30', '2024-12-01'),
+  ('TH-456-CD', 'Nissan', 'Note', 2019, 'Silver', '2025-08-15', '2024-11-20'),
+  ('LG-789-EF', 'Honda', 'Fit', 2021, 'Blue', '2025-05-20', '2024-10-15');
 
 -- Link drivers to vehicles
-UPDATE vehicles SET driver_id = (SELECT id FROM drivers WHERE license_number = 'DL-2024-001') WHERE plate_number = 'KAA-123B';
-UPDATE vehicles SET driver_id = (SELECT id FROM drivers WHERE license_number = 'DL-2024-002') WHERE plate_number = 'KBB-456C';
-UPDATE vehicles SET driver_id = (SELECT id FROM drivers WHERE license_number = 'DL-2024-003') WHERE plate_number = 'KCC-789D';
-UPDATE vehicles SET driver_id = (SELECT id FROM drivers WHERE license_number = 'DL-2024-004') WHERE plate_number = 'KDD-012E';
+UPDATE vehicles SET driver_id = (SELECT id FROM drivers WHERE license_number = 'SN-DL-987654') WHERE plate_number = 'DK-123-AB';
+UPDATE vehicles SET driver_id = (SELECT id FROM drivers WHERE license_number = 'SN-DL-123456') WHERE plate_number = 'TH-456-CD';
+UPDATE vehicles SET driver_id = (SELECT id FROM drivers WHERE license_number = 'SN-DL-654321') WHERE plate_number = 'LG-789-EF';
+
+-- Insert sample operators
+-- Note: The id for the operator should match a user id from the Supabase auth.users table after the user is created.
+-- This is a placeholder value and will need to be updated.
+INSERT INTO operators (id, first_name, last_name, checkpoint_id, phone_number) VALUES
+('8b8d734f-3210-4923-a535-35458d73936b', 'Babacar', 'Diop', (SELECT id FROM checkpoints WHERE name = 'Downtown Central'), '+221771112233');

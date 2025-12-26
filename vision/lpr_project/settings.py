@@ -19,7 +19,9 @@ CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
@@ -105,6 +107,43 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# LPR Prompt
+LPR_PROMPT = """You are a highly advanced License Plate Recognition Agent.
+Your Goal: Detect and read ANY license plate in the image.
+
+Key Directives:
+1. **Detect Everything**: Look for license plates even if:
+   - The image is a photo of a screen (phone/monitor).
+   - The vehicle is only partially visible.
+   - The image is blurry or dark.
+   - It is a close-up of just the plate.
+
+2. **Senegal Context**: Prioritize formats like "DK-1234-A" or "AA-123-BB". 
+
+3. **Output Format**:
+Respond ONLY with this JSON structure:
+{
+    "is_vehicle": true,
+    "detections": [
+        {
+            "plate": {
+                "confidence": 0.99,
+                "coordinates": {"x1": 0, "y1": 0, "x2": 1000, "y2": 1000}
+            },
+            "ocr": [
+                {
+                    "text": "PLATE_NUMBER",
+                    "confidence": 0.99
+                }
+            ]
+        }
+    ]
+}
+
+- If you see a plate, set "is_vehicle": true.
+- "coordinates" are 0-1000 range.
+- NO MARKDOWN. NO CONVERSATIONAL TEXT. ONLY RAW JSON."""
+
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -137,17 +176,9 @@ UPLOAD_FILE_MAX_SIZE = 250 * 1024  # 250KB
 # Allowed file types for upload
 ALLOWED_IMAGE_TYPES = ['jpeg', 'jpg', 'png', 'webp']
 
-# TaxiGuard Vision: API Configuration
-QWEN_API_KEY = config('QWEN_API_KEY', default='')
-QWEN_BASE_URL = config('QWEN_BASE_URL', default='https://ollama.computedsynergy.com/v1')
-QWEN_MODEL = config('QWEN_MODEL', default='qwen3-vl-4b-instruct')
-
-# OpenRouter / OpenRouter.ai configuration (optional)
-OPENROUTER_API_KEY = config('OPENROUTER_API_KEY', default='')
-OPENROUTER_BASE_URL = config('OPENROUTER_BASE_URL', default='https://openrouter.ai/api/v1/chat/completions')
-# Optional headers for OpenRouter requests
-OPENROUTER_HTTP_REFERER = config('OPENROUTER_HTTP_REFERER', default='')
-OPENROUTER_X_TITLE = config('OPENROUTER_X_TITLE', default='')
+# TaxiGuard Vision: Google Gemini API Configuration
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
+GEMINI_MODEL = config('GEMINI_MODEL', default='gemini-1.5-flash')
 
 # TaxiGuard Core: Supabase Configuration
 SUPABASE_URL = config('SUPABASE_URL', default='')

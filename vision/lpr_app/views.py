@@ -18,7 +18,7 @@ from django.conf import settings
 
 from .models import UploadedImage, ProcessingLog
 from .forms import ImageUploadForm, LPRSettingsForm, ImageSearchForm
-from .services.qwen_client import get_qwen_client, LPR_PROMPT, parse_lpr_response
+from .services.gemini_client import get_gemini_client, parse_lpr_response
 from .services.image_processor import ImageProcessor
 from .services.bbox_visualizer import visualize_lpr_on_image, create_side_by_side_comparison
 from .metrics import (
@@ -175,7 +175,7 @@ def process_uploaded_image(uploaded_image: UploadedImage, save_image: bool = Tru
         ProcessingLog.objects.create(
             uploaded_image=uploaded_image,
             status='api_call',
-            message='Starting Qwen3-VL API call'
+            message='Starting Gemini API call'
         )
         
         start_time = time.time()
@@ -210,11 +210,9 @@ def process_uploaded_image(uploaded_image: UploadedImage, save_image: bool = Tru
         if not base64_image:
             return {'success': False, 'error': 'Failed to encode image'}
         
-        # Call Qwen3-VL API with customized prompt
-        client = get_qwen_client()
-        # Customize prompt with actual filename
-        customized_prompt = LPR_PROMPT.replace('[actual filename of the image]', uploaded_image.filename)
-        api_response = client.analyze_image(base64_image, customized_prompt)
+        # Call Qwen3-VL API
+        client = get_gemini_client()
+        api_response = client.analyze_image(base64_image)
         
         if not api_response:
             return {'success': False, 'error': 'API call failed'}
@@ -518,9 +516,9 @@ def api_health_check(request):
     Health check endpoint for the API
     """
     try:
-        # Check Qwen3-VL API
+        # Check Gemini API
         api_start_time = time.time()
-        client = get_qwen_client()
+        client = get_gemini_client()
         api_healthy = client.health_check()
         api_duration = time.time() - api_start_time
         
