@@ -14,7 +14,7 @@ from typing import Dict, Any, Optional
 from django.conf import settings
 
 from ..models import UploadedImage, ProcessingLog
-from .qwen_client import get_qwen_client, parse_lpr_response
+from .gemini_client import get_gemini_client, parse_lpr_response
 from .image_processor import ImageProcessor
 from .local_inference_service import LocalInferenceService
 from .bbox_visualizer import visualize_lpr_on_image, create_side_by_side_comparison
@@ -51,7 +51,7 @@ class ImageProcessingService:
             ProcessingLog.objects.create(
                 uploaded_image=uploaded_image,
                 status='api_call',
-                message='Starting Qwen3-VL API call'
+                message='Starting Gemini API call'
             )
             
             start_time = time.time()
@@ -96,19 +96,23 @@ class ImageProcessingService:
             if not base64_image:
                 return {'success': False, 'error': 'Failed to encode image'}
             
-            # Call Qwen3-VL API
-            client = get_qwen_client()
+            # Call Gemini API
+            client = get_gemini_client()
             api_response = client.analyze_image(base64_image)
             
             if not api_response:
                 ocr = LocalOCRService.read_plate(prepared_path)
                 if not ocr:
                     return {'success': False, 'error': 'API call failed'}
+                bbox = ocr.get('bbox') if isinstance(ocr, dict) else None
+                coords = {}
+                if bbox and len(bbox) == 4:
+                    coords = {'x1': bbox[0], 'y1': bbox[1], 'x2': bbox[2], 'y2': bbox[3]}
                 parsed_response = {
                     'detections': [
                         {
                             'plate': {
-                                'coordinates': {},
+                                'coordinates': coords,
                                 'confidence': 0
                             },
                             'ocr': [
@@ -127,11 +131,15 @@ class ImageProcessingService:
                 ocr = LocalOCRService.read_plate(prepared_path)
                 if not ocr:
                     return {'success': False, 'error': 'Failed to parse API response'}
+                bbox = ocr.get('bbox') if isinstance(ocr, dict) else None
+                coords = {}
+                if bbox and len(bbox) == 4:
+                    coords = {'x1': bbox[0], 'y1': bbox[1], 'x2': bbox[2], 'y2': bbox[3]}
                 parsed_response = {
                     'detections': [
                         {
                             'plate': {
-                                'coordinates': {},
+                                'coordinates': coords,
                                 'confidence': 0
                             },
                             'ocr': [

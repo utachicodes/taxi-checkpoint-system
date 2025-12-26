@@ -265,7 +265,7 @@ class ApiService:
             import io
             import base64
             from .local_inference_service import LocalInferenceService
-            from .qwen_client import get_qwen_client, parse_lpr_response
+            from .gemini_client import get_gemini_client, parse_lpr_response
             from .local_ocr_service import LocalOCRService
             
             # 1. Read file to memory
@@ -294,8 +294,8 @@ class ApiService:
             image_pil.convert('RGB').save(buffered, format="JPEG", quality=95)
             img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
             
-            # 5. Call Cloud AI (Qwen)
-            client = get_qwen_client()
+            # 5. Call Cloud AI (Gemini)
+            client = get_gemini_client()
             api_response = client.analyze_image(img_str)
             
             if not api_response:
@@ -314,11 +314,15 @@ class ApiService:
                 if not ocr:
                     return {'success': False, 'error': 'API call failed'}, None
                 processing_time = int((time.time() - start_time) * 1000)
+                bbox = ocr.get('bbox') if isinstance(ocr, dict) else None
+                coords = {}
+                if bbox and len(bbox) == 4:
+                    coords = {'x1': bbox[0], 'y1': bbox[1], 'x2': bbox[2], 'y2': bbox[3]}
                 fallback_response = {
                     'detections': [
                         {
                             'plate': {
-                                'coordinates': {},
+                                'coordinates': coords,
                                 'confidence': 0
                             },
                             'ocr': [
@@ -339,15 +343,35 @@ class ApiService:
                 }, None
                 
             # 6. Parse Response
-            # We use original dimensions for both source and target since we want relative coords or 
-            # we can use the resized dimensions if we scaled it. 
-            # Ideally parse_lpr_response should handle this, but for now we pass dims.
             parsed_response = parse_lpr_response(
                 api_response, 
                 original_h=image_pil.height, 
                 original_w=image_pil.width
             )
             
+            # --- MERGE LOCAL DETECTIONS (RF-DETR/YOLO) ---
+            # This ensures we see vehicle bounding boxes even if plate is not read
+            if parsed_response is None:
+                parsed_response = {'detections': []}
+            if 'detections' not in parsed_response:
+                parsed_response['detections'] = []
+                
+            if local_result.get('vehicles'):
+                for v in local_result['vehicles']:
+                    # Convert xyxy to xywh for frontend
+                    if 'box' in v:
+                        x1, y1, x2, y2 = v['box']
+                        w = x2 - x1
+                        h = y2 - y1
+                        
+                        # Add vehicle detection entry
+                        parsed_response['detections'].append({
+                            'bbox': [x1, y1, w, h],
+                            'type': v.get('class', 'vehicle'),
+                            'confidence': v.get('confidence', 0),
+                            'source': 'local'
+                        })
+
             processing_time = int((time.time() - start_time) * 1000)
             
             return {
