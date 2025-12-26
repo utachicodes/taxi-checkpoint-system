@@ -93,3 +93,12 @@ export interface DailyPayment {
   vehicle?: Vehicle
 }
 
+export interface ScanEvent {
+  id: string
+  plate_text: string | null
+  checkpoint_status: string
+  has_paid: boolean
+  image_url?: string | null
+  created_at: string
+}
+

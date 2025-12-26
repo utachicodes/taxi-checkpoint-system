@@ -22,21 +22,52 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Basic validation
+    if (!email || !password) {
+      toast({
+        title: "Champs requis",
+        description: "Veuillez remplir tous les champs.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Email invalide",
+        description: "Veuillez entrer une adresse email valide.",
+        variant: "destructive",
+      })
+      return
+    }
+
     const supabase = createClient()
     setIsLoading(true)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       })
+      
       if (error) throw error
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      if (!data.user) {
+        throw new Error("Aucun utilisateur trouvé")
+      }
 
-      const { data: operator } = await supabase.from("operators").select("role").eq("id", user?.id).single()
+      const { data: operator, error: operatorError } = await supabase
+        .from("operators")
+        .select("role")
+        .eq("id", data.user.id)
+        .single()
+
+      if (operatorError) {
+        throw new Error("Profil opérateur introuvable. Veuillez contacter l'administrateur.")
+      }
 
       toast({
         title: "Connexion réussie",
@@ -49,9 +80,13 @@ export default function LoginPage() {
         router.push("/operator")
       }
     } catch (error: unknown) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Une erreur s'est produite lors de la connexion"
+      
       toast({
         title: "Erreur de connexion",
-        description: error instanceof Error ? error.message : "Une erreur s'est produite",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

@@ -68,9 +68,9 @@ export async function createOperatorAction(formData: {
     const adminClient = getAdminClient()
 
     // 2. Create the user in Supabase Auth
-    // We use a temporary dummy password that they should change, 
-    // or we can just send an invite. For this demo, let's set a default one.
-    const tempPassword = "Password123!"
+    // Generate a secure random password that the user must change on first login
+    const tempPassword = process.env.DEFAULT_OPERATOR_PASSWORD || 
+      `Temp${Math.random().toString(36).slice(-12)}!${Date.now().toString(36)}`
 
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
         email: formData.email,

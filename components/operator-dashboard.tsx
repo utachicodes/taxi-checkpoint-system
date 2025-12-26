@@ -9,9 +9,10 @@ import { Badge } from "@/components/ui/badge"
 import { Shield, Search, LogOut, Camera, AlertTriangle, CheckCircle, RefreshCcw, History, ArrowRight, Zap, Car } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
-import type { Driver, Vehicle, DailyPayment } from "@/lib/types"
+import type { Driver, Vehicle, DailyPayment, Operator } from "@/lib/types"
+import { config } from "@/lib/config"
 
-export default function OperatorDashboard({ operator }: { operator: any }) {
+export default function OperatorDashboard({ operator }: { operator: Operator }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [driver, setDriver] = useState<Driver | null>(null)
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
@@ -21,8 +22,10 @@ export default function OperatorDashboard({ operator }: { operator: any }) {
   const [history, setHistory] = useState<(Vehicle & { paid: boolean, time: string })[]>([])
   const [hasCameraAccess, setHasCameraAccess] = useState(false)
   const [autoScanEnabled, setAutoScanEnabled] = useState(false)
+  const [detections, setDetections] = useState<any[]>([])
 
   const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
   const router = useRouter()
   const { toast } = useToast()
@@ -60,11 +63,26 @@ export default function OperatorDashboard({ operator }: { operator: any }) {
 
   // Camera Setup
   useEffect(() => {
+    let stream: MediaStream | null = null
+
     async function startCamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        // First, try to enumerate devices to find the default camera (index 0)
+        const devices = await navigator.mediaDevices.enumerateDevices()
+        const videoDevices = devices.filter(device => device.kind === 'videoinput')
+        if (videoDevices.length === 0) {
+          throw new Error('No camera devices found')
+        }
+
+        // Prefer device 0 (default/laptop camera) by specifying deviceId if available
+        let constraints: MediaStreamConstraints = {
           video: { width: { ideal: 1280 }, height: { ideal: 720 } }
-        })
+        }
+        if (videoDevices[0].deviceId) {
+          constraints.video = { ...(constraints.video as MediaTrackConstraints), deviceId: { exact: videoDevices[0].deviceId } }
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints)
         if (videoRef.current) {
           videoRef.current.srcObject = stream
           setHasCameraAccess(true)
@@ -74,20 +92,162 @@ export default function OperatorDashboard({ operator }: { operator: any }) {
         toast({ title: "Erreur Caméra", description: "Impossible d'accéder à la caméra.", variant: "destructive" })
       }
     }
+    
     startCamera()
-  }, [])
+
+    // Cleanup function
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop())
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null
+      }
+    }
+  }, [toast])
+
+  // Auto-detection loop (for bounding box visualization only)
+  useEffect(() => {
+    if (!hasCameraAccess || !autoScanEnabled) return
+
+    const interval = setInterval(async () => {
+      if (!videoRef.current) return
+      const video = videoRef.current
+
+      // Use off-screen canvas for capture to avoid conflict with overlay canvas
+      const offscreenCanvas = document.createElement('canvas')
+      offscreenCanvas.width = video.videoWidth
+      offscreenCanvas.height = video.videoHeight
+      const ctx = offscreenCanvas.getContext('2d')
+      if (!ctx) return
+
+      ctx.drawImage(video, 0, 0)
+      const imageData = offscreenCanvas.toDataURL('image/jpeg', 0.8)
+
+      try {
+        const formData = new FormData()
+        // Convert data URL to Blob
+        const blob = await (await fetch(imageData)).blob()
+        formData.append('image', blob, 'frame.jpg')
+        formData.append('save_image', 'false')
+
+        const res = await fetch(config.api.visionApiEndpoint, {
+          method: 'POST',
+          body: formData,
+        })
+        if (res.ok) {
+          const data = await res.json()
+          // Handle both structure formats (results list or direct detections)
+          const results = data.results?.detections || data.detections || []
+          setDetections(results)
+        }
+        // Silently handle errors for background detection
+      } catch (e) {
+        // Silently handle errors for background detection
+      }
+    }, 2000) // Run detection every 2 seconds
+
+    return () => clearInterval(interval)
+  }, [hasCameraAccess, autoScanEnabled])
+
+  // Draw bounding boxes
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const video = videoRef.current
+    if (!canvas || !video) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      detections.forEach((det: any) => {
+        let x, y, w, h;
+        let label = 'vehicle';
+        let plateText = '';
+
+        // Handle Gemini format (plate object with coordinates)
+        if (det.plate?.coordinates) {
+          const { x1, y1, x2, y2 } = det.plate.coordinates;
+          // Ensure valid coordinates
+          if (x1 !== undefined && y2 !== undefined) {
+            x = x1;
+            y = y1;
+            w = x2 - x1;
+            h = y2 - y1;
+            plateText = det.ocr?.[0]?.text || '';
+          }
+        }
+        // Handle legacy/YOLO format (bbox array)
+        else if (det.bbox) {
+          [x, y, w, h] = det.bbox;
+          label = det.type || 'vehicle';
+          plateText = det.ocr?.[0]?.text || '';
+        }
+
+        // Draw if we have valid dimensions
+        if (x !== undefined && w !== undefined) {
+          ctx.strokeStyle = '#00ff00'
+          ctx.lineWidth = 3
+          ctx.strokeRect(x, y, w, h)
+
+          ctx.fillStyle = '#00ff00'
+          ctx.font = 'bold 16px sans-serif'
+          ctx.fillText(label, x, y - 8)
+
+          if (plateText) {
+            // Draw background for plate text
+            const textWidth = ctx.measureText(`Plate: ${plateText}`).width;
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(x, y + h + 5, textWidth + 10, 24);
+
+            ctx.fillStyle = '#ffaa00'
+            ctx.fillText(`Plate: ${plateText}`, x + 5, y + h + 22)
+          }
+        }
+      })
+      requestAnimationFrame(draw)
+    }
+    draw()
+  }, [detections])
+
+  // Enable auto-scan on login
+  useEffect(() => {
+    if (hasCameraAccess) {
+      setAutoScanEnabled(true)
+    }
+  }, [hasCameraAccess])
 
   // Process a License Plate (Manual or Auto)
   const processPlate = async (plate: string) => {
     if (!plate) return
+    
+    // Basic plate validation
+    const cleanedPlate = plate.trim().toUpperCase()
+    if (cleanedPlate.length < 3) {
+      toast({
+        title: "Plaque invalide",
+        description: "La plaque d'immatriculation est trop courte.",
+        variant: "destructive"
+      })
+      return
+    }
+    
     setIsScanning(true)
 
     try {
-      const { data: vehicleData } = await supabase
+      const { data: vehicleData, error: vehicleError } = await supabase
         .from("vehicles")
         .select("*, driver:drivers(*)")
-        .eq("plate_number", plate.toUpperCase())
+        .eq("plate_number", cleanedPlate)
         .single()
+      
+      if (vehicleError && vehicleError.code !== 'PGRST116') {
+        throw vehicleError
+      }
 
       if (vehicleData) {
         setVehicle(vehicleData as Vehicle)
@@ -95,22 +255,28 @@ export default function OperatorDashboard({ operator }: { operator: any }) {
 
         // Check Payment
         const today = new Date().toISOString().split("T")[0]
-        const { data: payment } = await supabase
+        const { data: payment, error: paymentError } = await supabase
           .from("daily_payments")
           .select("*")
           .eq("vehicle_id", vehicleData.id)
           .eq("payment_date", today)
           .single()
 
-        setDailyPayment(payment as DailyPayment)
+        if (paymentError && paymentError.code !== 'PGRST116') {
+          if (config.app.isDevelopment) {
+            console.error('Payment check error:', paymentError)
+          }
+        }
+
+        setDailyPayment(payment as DailyPayment | null)
 
         // Alert
         if (payment) {
           playAlert("success")
-          toast({ title: "Conforme", description: `Véhicule ${plate} en règle.` })
+          toast({ title: "Conforme", description: `Véhicule ${cleanedPlate} en règle.` })
         } else {
           playAlert("warning")
-          toast({ title: "Alerte", description: `Véhicule ${plate} NON PAYÉ !`, variant: "destructive" })
+          toast({ title: "Alerte", description: `Véhicule ${cleanedPlate} NON PAYÉ !`, variant: "destructive" })
         }
 
         // Add to History
@@ -124,9 +290,18 @@ export default function OperatorDashboard({ operator }: { operator: any }) {
         toast({ title: "Inconnu", description: "Véhicule non trouvé dans la base.", variant: "destructive" })
         setVehicle(null)
         setDriver(null)
+        setDailyPayment(null)
       }
     } catch (e) {
-      console.error(e)
+      const errorMessage = e instanceof Error ? e.message : "Erreur lors de la recherche du véhicule"
+      if (config.app.isDevelopment) {
+        console.error('Process plate error:', e)
+      }
+      toast({
+        title: "Erreur",
+        description: errorMessage,
+        variant: "destructive"
+      })
     } finally {
       setIsScanning(false)
     }
@@ -174,10 +349,7 @@ export default function OperatorDashboard({ operator }: { operator: any }) {
         formData.append('save_image', 'false')
 
         try {
-          // Determine API URL based on environment or default to local fallback
-          const apiUrl = 'http://localhost:8000/api/v1/ocr/'
-
-          const res = await fetch(apiUrl, { method: 'POST', body: formData })
+          const res = await fetch(config.api.visionApiEndpoint, { method: 'POST', body: formData })
           if (res.ok) {
             const data = await res.json()
             const plate = data.detections?.[0]?.ocr?.[0]?.text
@@ -186,7 +358,9 @@ export default function OperatorDashboard({ operator }: { operator: any }) {
               processPlate(plate)
             }
           }
-        } catch (e) { console.error(e) }
+        } catch (e) {
+          console.error('Capture and scan error:', e)
+        }
         resolve()
       }, 'image/jpeg', 0.6) // Lower quality for faster upload
     })
@@ -204,7 +378,9 @@ export default function OperatorDashboard({ operator }: { operator: any }) {
       try {
         await captureAndScan()
       } catch (error) {
-        console.error("Scan error:", error)
+        if (config.app.isDevelopment) {
+          console.error("Scan error:", error)
+        }
       } finally {
         // Schedule next scan ONLY after current one finishes
         if (isMounted && autoScanEnabled) {
@@ -229,14 +405,17 @@ export default function OperatorDashboard({ operator }: { operator: any }) {
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'scan_events' },
       (payload) => {
-        if (payload.new.plate_text) {
+        if (payload.new?.plate_text) {
           setSearchQuery(payload.new.plate_text)
           processPlate(payload.new.plate_text)
         }
       }
     ).subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [])
+    
+    return () => {
+      supabase.removeChannel(channel).catch(console.error)
+    }
+  }, [supabase])
 
   const handleMarkAsPaid = async () => {
     if (!vehicle) return
@@ -296,8 +475,15 @@ export default function OperatorDashboard({ operator }: { operator: any }) {
             {/* Video Feed */}
             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
 
+            {/* Canvas Overlay for Bounding Boxes */}
+            <canvas
+              ref={canvasRef}
+              className="absolute top-0 left-0 w-full h-full pointer-events-none"
+              style={{ zIndex: 10 }}
+            />
+
             {/* Status Badge Overlay */}
-            <div className="absolute top-4 left-4 bg-black/60 backdrop-blur px-3 py-1 rounded-full border border-white/10 flex items-center gap-2">
+            <div className="absolute top-4 left-4 bg-black/60 backdrop-blur px-3 py-1 rounded-full border border-white/10 flex items-center gap-2" style={{ zIndex: 20 }}>
               <div className={`w-2 h-2 rounded-full ${autoScanEnabled ? 'bg-green-500 animate-pulse' : 'bg-zinc-500'}`} />
               <span className="text-xs font-bold tracking-wide text-white/80">
                 {autoScanEnabled ? 'SCAN AUTO' : 'SCAN MANUEL'}
@@ -305,7 +491,7 @@ export default function OperatorDashboard({ operator }: { operator: any }) {
             </div>
 
             {/* Mobile Controls Overlay */}
-            <div className="absolute bottom-4 right-4">
+            <div className="absolute bottom-4 right-4" style={{ zIndex: 20 }}>
               <Button
                 size="sm"
                 variant="secondary"

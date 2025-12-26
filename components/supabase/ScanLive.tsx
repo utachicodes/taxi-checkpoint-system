@@ -2,21 +2,29 @@
 
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-
-const supabase = createClient()
+import type { ScanEvent } from '@/lib/types'
 
 export default function ScanLive() {
-  const [events, setEvents] = useState<any[]>([])
+  const [events, setEvents] = useState<ScanEvent[]>([])
+  const supabase = createClient()
 
   useEffect(() => {
+    let mounted = true
+
     // initial load: fetch recent events
     supabase
       .from('scan_events')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(10)
-      .then(({ data }) => {
-        if (data) setEvents(data as any[])
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Error fetching scan events:', error)
+          return
+        }
+        if (data && mounted) {
+          setEvents(data as ScanEvent[])
+        }
       })
 
     // subscribe to INSERT events
@@ -26,31 +34,34 @@ export default function ScanLive() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'scan_events' },
         (payload) => {
-          setEvents((prev) => [payload.new, ...prev].slice(0, 50))
+          if (mounted) {
+            setEvents((prev) => [payload.new as ScanEvent, ...prev].slice(0, 50))
+          }
         }
       )
       .subscribe()
 
     return () => {
+      mounted = false
       try {
         // cleanup subscription
         if (channel) {
-          // @ts-ignore - supabase typings vary by version
-          supabase.removeChannel(channel)
+          supabase.removeChannel(channel).catch(console.error)
         }
       } catch (e) {
         // fallback for older supabase client
-        // @ts-ignore
-        channel.unsubscribe && channel.unsubscribe()
+        if (channel && typeof (channel as any).unsubscribe === 'function') {
+          (channel as any).unsubscribe()
+        }
       }
     }
-  }, [])
+  }, [supabase])
 
   return (
     <div className="p-4 bg-white/5 rounded-md text-sm">
       <h3 className="font-semibold mb-2">Live Scans</h3>
       <ul className="space-y-2 max-h-80 overflow-auto">
-        {events.map((ev: any) => (
+        {events.map((ev) => (
           <li key={ev.id} className="flex items-start gap-3">
             <div className="flex-1">
               <div className="text-xs text-gray-400">{new Date(ev.created_at).toLocaleString()}</div>

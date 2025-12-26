@@ -21,7 +21,7 @@ export default function AdminDashboard({ operator }: { operator: Operator }) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [payments, setPayments] = useState<DailyPayment[]>([])
-  const [operators, setOperators] = useState<any[]>([])
+  const [operators, setOperators] = useState<Operator[]>([])
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -82,8 +82,29 @@ export default function AdminDashboard({ operator }: { operator: Operator }) {
 
   const handleAddVehicle = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newPlate || !newMake || !driverName) return
+    
+    // Input validation
+    if (!newPlate || !newMake || !driverName) {
+      toast({
+        title: "Erreur de validation",
+        description: "Veuillez remplir tous les champs requis.",
+        variant: "destructive"
+      })
+      return
+    }
 
+    // Validate plate number format (basic validation)
+    const plateRegex = /^[A-Z0-9-]{3,15}$/i
+    if (!plateRegex.test(newPlate)) {
+      toast({
+        title: "Format invalide",
+        description: "Le format de la plaque d'immatriculation est invalide.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsLoading(true)
     try {
       // First, create or find the driver
       let driverId = null
@@ -134,8 +155,15 @@ export default function AdminDashboard({ operator }: { operator: Operator }) {
       setNewModel("")
       setDriverName("")
       loadData()
-    } catch (err) {
-      toast({ title: "Erreur", description: "Impossible d'enregistrer le véhicule.", variant: "destructive" })
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Impossible d'enregistrer le véhicule."
+      toast({ 
+        title: "Erreur", 
+        description: errorMessage, 
+        variant: "destructive" 
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -155,7 +183,27 @@ export default function AdminDashboard({ operator }: { operator: Operator }) {
 
   const handleAddOperator = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newOpEmail || !newOpName || !newOpBadge) return
+    
+    // Input validation
+    if (!newOpEmail || !newOpName || !newOpBadge) {
+      toast({
+        title: "Erreur de validation",
+        description: "Veuillez remplir tous les champs requis.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(newOpEmail)) {
+      toast({
+        title: "Email invalide",
+        description: "Veuillez entrer une adresse email valide.",
+        variant: "destructive"
+      })
+      return
+    }
 
     setIsLoading(true)
     try {
