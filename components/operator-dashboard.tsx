@@ -107,27 +107,70 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
   }, [toast])
 
   // Auto-detection loop (for bounding box visualization only)
+  // Optimized for faster real-time detection
   useEffect(() => {
     if (!hasCameraAccess || !autoScanEnabled) return
 
-    const interval = setInterval(async () => {
-      if (!videoRef.current) return
+    let isProcessing = false
+    let lastDetectionTime = 0
+    const MIN_DETECTION_INTERVAL = 500 // Minimum 500ms between detections
+    const MAX_DETECTION_INTERVAL = 2000 // Fallback to 2s if no vehicles detected
+
+    const performDetection = async () => {
+      if (isProcessing || !videoRef.current) return
+      
+      const now = Date.now()
+      const timeSinceLastDetection = now - lastDetectionTime
+      
+      // Throttle: Don't detect too frequently if we just detected something
+      if (timeSinceLastDetection < MIN_DETECTION_INTERVAL) {
+        return
+      }
+
+      isProcessing = true
       const video = videoRef.current
 
-      // Use off-screen canvas for capture to avoid conflict with overlay canvas
-      const offscreenCanvas = document.createElement('canvas')
-      offscreenCanvas.width = video.videoWidth
-      offscreenCanvas.height = video.videoHeight
-      const ctx = offscreenCanvas.getContext('2d')
-      if (!ctx) return
-
-      ctx.drawImage(video, 0, 0)
-      const imageData = offscreenCanvas.toDataURL('image/jpeg', 0.8)
-
       try {
+        // Optimize: Resize image before sending to reduce payload
+        const MAX_DIM = 800
+        let width = video.videoWidth
+        let height = video.videoHeight
+
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height = Math.round(height * (MAX_DIM / width))
+            width = MAX_DIM
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width = Math.round(width * (MAX_DIM / height))
+            height = MAX_DIM
+          }
+        }
+
+        // Use off-screen canvas for capture
+        const offscreenCanvas = document.createElement('canvas')
+        offscreenCanvas.width = width
+        offscreenCanvas.height = height
+        const ctx = offscreenCanvas.getContext('2d')
+        if (!ctx) {
+          isProcessing = false
+          return
+        }
+
+        ctx.drawImage(video, 0, 0, width, height)
+
+        // Convert to blob directly (more efficient than data URL)
+        const blob = await new Promise<Blob | null>((resolve) => {
+          offscreenCanvas.toBlob(resolve, 'image/jpeg', 0.7) // Lower quality for speed
+        })
+
+        if (!blob) {
+          isProcessing = false
+          return
+        }
+
         const formData = new FormData()
-        // Convert data URL to Blob
-        const blob = await (await fetch(imageData)).blob()
         formData.append('image', blob, 'frame.jpg')
         formData.append('save_image', 'false')
 
@@ -135,22 +178,55 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
           method: 'POST',
           body: formData,
         })
+
         if (res.ok) {
           const data = await res.json()
-          // Handle both structure formats (results list or direct detections)
           const results = data.results?.detections || data.detections || []
+          
+          if (results.length > 0) {
+            lastDetectionTime = Date.now()
+          }
+          
           setDetections(results)
         }
-        // Silently handle errors for background detection
       } catch (e) {
         // Silently handle errors for background detection
+        if (config.app.isDevelopment) {
+          console.debug('Detection error:', e)
+        }
+      } finally {
+        isProcessing = false
       }
-    }, 2000) // Run detection every 2 seconds
+    }
 
-    return () => clearInterval(interval)
+    // Start with immediate detection, then use adaptive interval
+    performDetection()
+
+    // Use requestAnimationFrame for smoother, more efficient updates
+    let animationFrameId: number
+    let lastFrameTime = 0
+    const TARGET_FPS = 2 // 2 detections per second (500ms interval)
+
+    const loop = (currentTime: number) => {
+      const elapsed = currentTime - lastFrameTime
+      const interval = 1000 / TARGET_FPS // 500ms
+
+      if (elapsed >= interval) {
+        performDetection()
+        lastFrameTime = currentTime
+      }
+
+      animationFrameId = requestAnimationFrame(loop)
+    }
+
+    animationFrameId = requestAnimationFrame(loop)
+
+    return () => {
+      cancelAnimationFrame(animationFrameId)
+    }
   }, [hasCameraAccess, autoScanEnabled])
 
-  // Draw bounding boxes
+  // Draw bounding boxes - Optimized for smooth real-time rendering
   useEffect(() => {
     const canvas = canvasRef.current
     const video = videoRef.current
@@ -158,60 +234,116 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+    // Sync canvas size with video
+    const updateCanvasSize = () => {
+      if (video.videoWidth && video.videoHeight) {
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+      }
+    }
+    
+    updateCanvasSize()
+    
+    // Watch for video size changes
+    let resizeObserver: ResizeObserver | null = null
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(updateCanvasSize)
+      resizeObserver.observe(video)
+    }
+
+    let animationFrameId: number
+    let lastDetections = detections
 
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      // Only clear and redraw if detections changed or canvas size changed
+      const needsRedraw = 
+        JSON.stringify(lastDetections) !== JSON.stringify(detections) ||
+        canvas.width !== video.videoWidth ||
+        canvas.height !== video.videoHeight
 
-      detections.forEach((det: any) => {
-        let x, y, w, h;
-        let label = 'vehicle';
-        let plateText = '';
+      if (needsRedraw) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        updateCanvasSize()
+        lastDetections = detections
 
-        // Handle Gemini format (plate object with coordinates)
-        if (det.plate?.coordinates) {
-          const { x1, y1, x2, y2 } = det.plate.coordinates;
-          // Ensure valid coordinates
-          if (x1 !== undefined && y2 !== undefined) {
-            x = x1;
-            y = y1;
-            w = x2 - x1;
-            h = y2 - y1;
+        detections.forEach((det: any) => {
+          let x, y, w, h;
+          let label = 'vehicle';
+          let plateText = '';
+
+          // Handle Gemini format (plate object with coordinates)
+          if (det.plate?.coordinates) {
+            const { x1, y1, x2, y2 } = det.plate.coordinates;
+            if (x1 !== undefined && y2 !== undefined && x2 > x1 && y2 > y1) {
+              x = x1;
+              y = y1;
+              w = x2 - x1;
+              h = y2 - y1;
+              plateText = det.ocr?.[0]?.text || '';
+            }
+          }
+          // Handle legacy/YOLO format (bbox array)
+          else if (det.bbox && Array.isArray(det.bbox) && det.bbox.length >= 4) {
+            [x, y, w, h] = det.bbox;
+            label = det.type || 'vehicle';
             plateText = det.ocr?.[0]?.text || '';
           }
-        }
-        // Handle legacy/YOLO format (bbox array)
-        else if (det.bbox) {
-          [x, y, w, h] = det.bbox;
-          label = det.type || 'vehicle';
-          plateText = det.ocr?.[0]?.text || '';
-        }
 
-        // Draw if we have valid dimensions
-        if (x !== undefined && w !== undefined) {
-          ctx.strokeStyle = '#00ff00'
-          ctx.lineWidth = 3
-          ctx.strokeRect(x, y, w, h)
+          // Draw if we have valid dimensions
+          if (x !== undefined && w !== undefined && w > 0 && h > 0) {
+            // Scale coordinates if canvas size differs from detection size
+            const scaleX = canvas.width / (video.videoWidth || 1)
+            const scaleY = canvas.height / (video.videoHeight || 1)
+            
+            const scaledX = x * scaleX
+            const scaledY = y * scaleY
+            const scaledW = w * scaleX
+            const scaledH = h * scaleY
 
-          ctx.fillStyle = '#00ff00'
-          ctx.font = 'bold 16px sans-serif'
-          ctx.fillText(label, x, y - 8)
+            // Draw bounding box with better visibility
+            ctx.strokeStyle = '#00ff00'
+            ctx.lineWidth = 3
+            ctx.setLineDash([])
+            ctx.strokeRect(scaledX, scaledY, scaledW, scaledH)
 
-          if (plateText) {
-            // Draw background for plate text
-            const textWidth = ctx.measureText(`Plate: ${plateText}`).width;
-            ctx.fillStyle = 'rgba(0,0,0,0.7)';
-            ctx.fillRect(x, y + h + 5, textWidth + 10, 24);
+            // Draw label background
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.3)'
+            ctx.fillRect(scaledX, scaledY - 24, Math.max(80, label.length * 8), 24)
 
-            ctx.fillStyle = '#ffaa00'
-            ctx.fillText(`Plate: ${plateText}`, x + 5, y + h + 22)
+            // Draw label
+            ctx.fillStyle = '#00ff00'
+            ctx.font = 'bold 14px sans-serif'
+            ctx.fillText(label, scaledX + 4, scaledY - 6)
+
+            // Draw plate text if available
+            if (plateText) {
+              const text = `Plate: ${plateText}`
+              const textWidth = ctx.measureText(text).width
+              
+              // Background for plate text
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
+              ctx.fillRect(scaledX, scaledY + scaledH + 2, textWidth + 12, 26)
+
+              // Plate text
+              ctx.fillStyle = '#ffaa00'
+              ctx.font = 'bold 14px monospace'
+              ctx.fillText(text, scaledX + 6, scaledY + scaledH + 20)
+            }
           }
-        }
-      })
-      requestAnimationFrame(draw)
+        })
+      }
+
+      animationFrameId = requestAnimationFrame(draw)
     }
+
     draw()
+
+    return () => {
+      cancelAnimationFrame(animationFrameId)
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+      }
+    }
   }, [detections])
 
   // Enable auto-scan on login
@@ -367,30 +499,48 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
   }
 
   // --- Auto-Scan Loop (Recursive, waits for previous scan) ---
+  // Optimized to work in harmony with bounding box detection
   useEffect(() => {
     let timeoutId: NodeJS.Timeout
     let isMounted = true
+    let isScanning = false
+    let lastPlateProcessed = ''
+    let lastProcessTime = 0
+    const MIN_PROCESS_INTERVAL = 2000 // Process same plate max once per 2 seconds
 
     const runScan = async () => {
       // Base checks
-      if (!autoScanEnabled || !hasCameraAccess || !videoRef.current || !isMounted) return
+      if (!autoScanEnabled || !hasCameraAccess || !videoRef.current || !isMounted || isScanning) return
 
+      // Throttle: Don't process if we just processed this plate
+      const now = Date.now()
+      if (now - lastProcessTime < MIN_PROCESS_INTERVAL) {
+        if (isMounted && autoScanEnabled) {
+          timeoutId = setTimeout(runScan, 1000)
+        }
+        return
+      }
+
+      isScanning = true
       try {
         await captureAndScan()
+        lastProcessTime = Date.now()
       } catch (error) {
         if (config.app.isDevelopment) {
           console.error("Scan error:", error)
         }
       } finally {
+        isScanning = false
         // Schedule next scan ONLY after current one finishes
         if (isMounted && autoScanEnabled) {
-          timeoutId = setTimeout(runScan, 1000) // Fast polling now supported (1s)
+          timeoutId = setTimeout(runScan, 1500) // Slightly longer interval to avoid conflicts with detection
         }
       }
     }
 
     if (autoScanEnabled && hasCameraAccess) {
-      runScan()
+      // Small delay to let bounding box detection start first
+      timeoutId = setTimeout(runScan, 500)
     }
 
     return () => {
