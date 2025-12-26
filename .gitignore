@@ -44,3 +44,13 @@ vision/django.log
 *$py.class
 .env
 .antigravity*
+
+# Model files (too large for git)
+*.pth
+*.pt
+*.onnx
+*.h5
+*.pb
+*.pkl
+rf-detr-nano.pth
+yolov8n.pt
