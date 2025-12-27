@@ -178,7 +178,7 @@ ALLOWED_IMAGE_TYPES = ['jpeg', 'jpg', 'png', 'webp']
 
 # TaxiGuard Vision: Google Gemini API Configuration
 GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
-GEMINI_MODEL = config('GEMINI_MODEL', default='gemini-1.5-flash')
+GEMINI_MODEL = config('GEMINI_MODEL', default='gemini-1.5-pro')
 
 # TaxiGuard Core: Supabase Configuration
 SUPABASE_URL = config('SUPABASE_URL', default='')

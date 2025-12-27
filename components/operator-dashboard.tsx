@@ -129,36 +129,38 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
 
       isProcessing = true
       const video = videoRef.current
+      const originalWidth = video.videoWidth
+      const originalHeight = video.videoHeight
 
       try {
         // Optimize: Resize image before sending to reduce payload
         const MAX_DIM = 800
-        let width = video.videoWidth
-        let height = video.videoHeight
+        let resizedWidth = originalWidth
+        let resizedHeight = originalHeight
 
-        if (width > height) {
-          if (width > MAX_DIM) {
-            height = Math.round(height * (MAX_DIM / width))
-            width = MAX_DIM
+        if (originalWidth > originalHeight) {
+          if (originalWidth > MAX_DIM) {
+            resizedHeight = Math.round(originalHeight * (MAX_DIM / originalWidth))
+            resizedWidth = MAX_DIM
           }
         } else {
-          if (height > MAX_DIM) {
-            width = Math.round(width * (MAX_DIM / height))
-            height = MAX_DIM
+          if (originalHeight > MAX_DIM) {
+            resizedWidth = Math.round(originalWidth * (MAX_DIM / originalHeight))
+            resizedHeight = MAX_DIM
           }
         }
 
         // Use off-screen canvas for capture
         const offscreenCanvas = document.createElement('canvas')
-        offscreenCanvas.width = width
-        offscreenCanvas.height = height
+        offscreenCanvas.width = resizedWidth
+        offscreenCanvas.height = resizedHeight
         const ctx = offscreenCanvas.getContext('2d')
         if (!ctx) {
           isProcessing = false
           return
         }
 
-        ctx.drawImage(video, 0, 0, width, height)
+        ctx.drawImage(video, 0, 0, resizedWidth, resizedHeight)
 
         // Convert to blob directly (more efficient than data URL)
         const blob = await new Promise<Blob | null>((resolve) => {
@@ -181,13 +183,78 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
 
         if (res.ok) {
           const data = await res.json()
-          const results = data.results?.detections || data.detections || []
           
-          if (results.length > 0) {
-            lastDetectionTime = Date.now()
+          // ALWAYS log API response (not just in dev mode)
+          console.log('🔍 API Response:', {
+            hasResults: !!data.results,
+            hasDetections: !!(data.results?.detections || data.detections),
+            detectionsCount: (data.results?.detections || data.detections || []).length,
+            isVehicle: data.is_vehicle,
+            resultsStructure: data.results,
+            detectionsArray: data.results?.detections || data.detections,
+            fullData: JSON.stringify(data, null, 2)
+          })
+          
+          // Try multiple paths to get detections
+          const results = data.results?.detections || data.detections || data.results || []
+          
+          if (results.length === 0) {
+            console.warn('⚠️ No detections found in API response. Response structure:', Object.keys(data), 'Full response:', data)
+          } else {
+            console.log('✅ Found detections in API response:', results.length, results)
           }
           
-          setDetections(results)
+          // Scale coordinates from resized image back to original video size
+          const scaleX = originalWidth / resizedWidth
+          const scaleY = originalHeight / resizedHeight
+          
+          const scaledResults = results.map((det: any) => {
+            const scaled = { ...det }
+            
+            // Scale plate coordinates if present
+            if (scaled.plate?.coordinates) {
+              const coords = scaled.plate.coordinates
+              if (coords.x1 !== undefined) {
+                coords.x1 = Math.round(coords.x1 * scaleX)
+                coords.y1 = Math.round(coords.y1 * scaleY)
+                coords.x2 = Math.round(coords.x2 * scaleX)
+                coords.y2 = Math.round(coords.y2 * scaleY)
+              }
+            }
+            
+            // Scale bbox if present (YOLO/RFDETR format)
+            if (scaled.bbox && Array.isArray(scaled.bbox) && scaled.bbox.length >= 4) {
+              scaled.bbox[0] = Math.round(scaled.bbox[0] * scaleX) // x
+              scaled.bbox[1] = Math.round(scaled.bbox[1] * scaleY) // y
+              scaled.bbox[2] = Math.round(scaled.bbox[2] * scaleX) // w
+              scaled.bbox[3] = Math.round(scaled.bbox[3] * scaleY) // h
+            }
+            
+            return scaled
+          })
+          
+          // ALWAYS log detections (not just in dev mode)
+          console.log('📦 Scaled detections:', {
+            count: scaledResults.length,
+            detections: scaledResults,
+            firstDetection: scaledResults[0],
+            allDetections: scaledResults
+          })
+          
+          if (scaledResults.length > 0) {
+            lastDetectionTime = Date.now()
+            console.log('✅ Setting detections in state:', scaledResults.length, 'items', scaledResults)
+          } else {
+            console.warn('⚠️ No detections to display - API returned empty array')
+          }
+          
+          setDetections(scaledResults)
+        } else {
+          // Log API errors in development
+          if (config.app.isDevelopment) {
+            const errorText = await res.text().catch(() => 'Unknown error')
+            console.debug('API Error:', res.status, errorText)
+          }
         }
       } catch (e) {
         // Silently handle errors for background detection
@@ -230,15 +297,28 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
   useEffect(() => {
     const canvas = canvasRef.current
     const video = videoRef.current
-    if (!canvas || !video) return
+    if (!canvas || !video) {
+      if (config.app.isDevelopment) {
+        console.debug('Canvas or video not available:', { canvas: !!canvas, video: !!video })
+      }
+      return
+    }
     const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    if (!ctx) {
+      if (config.app.isDevelopment) {
+        console.debug('Canvas context not available')
+      }
+      return
+    }
 
     // Sync canvas size with video
     const updateCanvasSize = () => {
       if (video.videoWidth && video.videoHeight) {
         canvas.width = video.videoWidth
         canvas.height = video.videoHeight
+        if (config.app.isDevelopment) {
+          console.debug('Canvas size updated:', { width: canvas.width, height: canvas.height, videoWidth: video.videoWidth, videoHeight: video.videoHeight })
+        }
       }
     }
     
@@ -255,21 +335,40 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
     let lastDetections = detections
 
     const draw = () => {
-      // Only clear and redraw if detections changed or canvas size changed
-      const needsRedraw = 
-        JSON.stringify(lastDetections) !== JSON.stringify(detections) ||
-        canvas.width !== video.videoWidth ||
-        canvas.height !== video.videoHeight
-
-      if (needsRedraw) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        updateCanvasSize()
+      // Always update canvas size
+      updateCanvasSize()
+      
+      // Always clear and redraw for smooth updates
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      
+      // Check if detections changed
+      const detectionsChanged = JSON.stringify(lastDetections) !== JSON.stringify(detections)
+      if (detectionsChanged) {
         lastDetections = detections
+        console.log('🎯 Detections updated:', {
+          count: detections.length,
+          detections: detections,
+          canvasSize: { width: canvas.width, height: canvas.height },
+          videoSize: { width: video.videoWidth, height: video.videoHeight }
+        })
+      }
 
-        detections.forEach((det: any) => {
+      // Draw test box ALWAYS (for debugging visibility) - TOP RIGHT CORNER
+      ctx.strokeStyle = '#00ff00'
+      ctx.lineWidth = 3
+      ctx.strokeRect(canvas.width - 200, 10, 190, 50)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
+      ctx.fillRect(canvas.width - 200, 10, 190, 50)
+      ctx.fillStyle = '#00ff00'
+      ctx.font = 'bold 16px sans-serif'
+      ctx.fillText(`Detections: ${detections.length}`, canvas.width - 195, 30)
+      ctx.fillText(`Canvas: ${canvas.width}x${canvas.height}`, canvas.width - 195, 50)
+
+        detections.forEach((det: any, index: number) => {
           let x, y, w, h;
           let label = 'vehicle';
           let plateText = '';
+          let confidence = det.confidence || 0;
 
           // Handle Gemini format (plate object with coordinates)
           if (det.plate?.coordinates) {
@@ -282,16 +381,28 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
               plateText = det.ocr?.[0]?.text || '';
             }
           }
-          // Handle legacy/YOLO format (bbox array)
+          // Handle legacy/YOLO/RFDETR format (bbox array: [x, y, width, height])
           else if (det.bbox && Array.isArray(det.bbox) && det.bbox.length >= 4) {
             [x, y, w, h] = det.bbox;
-            label = det.type || 'vehicle';
+            label = det.type || det.class || 'vehicle';
             plateText = det.ocr?.[0]?.text || '';
+            confidence = det.confidence || 0;
+          }
+
+          // Debug logging - ALWAYS log invalid detections
+          if (x === undefined || w === undefined || w <= 0 || h <= 0) {
+            console.warn(`❌ Detection ${index} INVALID:`, {
+              hasPlate: !!det.plate,
+              hasBbox: !!det.bbox,
+              bbox: det.bbox,
+              x, y, w, h,
+              det
+            })
           }
 
           // Draw if we have valid dimensions
-          if (x !== undefined && w !== undefined && w > 0 && h > 0) {
-            // Scale coordinates if canvas size differs from detection size
+          if (x !== undefined && y !== undefined && w !== undefined && h !== undefined && w > 0 && h > 0) {
+            // Coordinates are already scaled to original video size, just scale to canvas if needed
             const scaleX = canvas.width / (video.videoWidth || 1)
             const scaleY = canvas.height / (video.videoHeight || 1)
             
@@ -300,34 +411,70 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
             const scaledW = w * scaleX
             const scaledH = h * scaleY
 
-            // Draw bounding box with better visibility
-            ctx.strokeStyle = '#00ff00'
-            ctx.lineWidth = 3
+            console.log(`🎯 Drawing RED box ${index}:`, {
+              original: { x, y, w, h },
+              scaled: { x: scaledX, y: scaledY, w: scaledW, h: scaledH },
+              scale: { scaleX, scaleY },
+              label,
+              plateText,
+              confidence,
+              canvas: { width: canvas.width, height: canvas.height },
+              video: { width: video.videoWidth, height: video.videoHeight }
+            })
+
+            // Draw RED bounding box (like YOLO reference) - THICK AND VISIBLE
+            ctx.strokeStyle = '#ff0000'  // Bright red color
+            ctx.lineWidth = 4  // Thicker line
             ctx.setLineDash([])
             ctx.strokeRect(scaledX, scaledY, scaledW, scaledH)
+            
+            // Draw a second red stroke for extra visibility
+            ctx.strokeStyle = '#ff0000'
+            ctx.lineWidth = 2
+            ctx.strokeRect(scaledX + 2, scaledY + 2, scaledW - 4, scaledH - 4)
 
-            // Draw label background
-            ctx.fillStyle = 'rgba(0, 255, 0, 0.3)'
-            ctx.fillRect(scaledX, scaledY - 24, Math.max(80, label.length * 8), 24)
+            // Prepare label text: "VehicleType (LicensePlate)" or "VehicleType (Not visible)"
+            const displayLabel = plateText 
+              ? `${label} (${plateText})` 
+              : `${label} (Not visible)`
+            
+            // Measure text for background sizing
+            ctx.font = 'bold 16px sans-serif'
+            const textMetrics = ctx.measureText(displayLabel)
+            const textWidth = textMetrics.width
+            const textHeight = 20
+            const padding = 8
 
-            // Draw label
-            ctx.fillStyle = '#00ff00'
-            ctx.font = 'bold 14px sans-serif'
-            ctx.fillText(label, scaledX + 4, scaledY - 6)
+            // Draw black background for label (like YOLO reference)
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
+            ctx.fillRect(
+              scaledX, 
+              scaledY - textHeight - padding, 
+              textWidth + (padding * 2), 
+              textHeight + padding
+            )
 
-            // Draw plate text if available
-            if (plateText) {
-              const text = `Plate: ${plateText}`
-              const textWidth = ctx.measureText(text).width
+            // Draw white text on black background
+            ctx.fillStyle = '#ffffff'
+            ctx.font = 'bold 16px sans-serif'
+            ctx.fillText(displayLabel, scaledX + padding, scaledY - padding - 2)
+
+            // Draw confidence if available (smaller text below)
+            if (confidence > 0) {
+              const confText = `${Math.round(confidence * 100)}%`
+              ctx.font = '12px sans-serif'
+              const confWidth = ctx.measureText(confText).width
               
-              // Background for plate text
-              ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
-              ctx.fillRect(scaledX, scaledY + scaledH + 2, textWidth + 12, 26)
-
-              // Plate text
-              ctx.fillStyle = '#ffaa00'
-              ctx.font = 'bold 14px monospace'
-              ctx.fillText(text, scaledX + 6, scaledY + scaledH + 20)
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+              ctx.fillRect(
+                scaledX,
+                scaledY + scaledH + 2,
+                confWidth + 8,
+                18
+              )
+              
+              ctx.fillStyle = '#ffff00'
+              ctx.fillText(confText, scaledX + 4, scaledY + scaledH + 15)
             }
           }
         })
@@ -336,6 +483,7 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
       animationFrameId = requestAnimationFrame(draw)
     }
 
+    // Start drawing immediately
     draw()
 
     return () => {
@@ -344,7 +492,7 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
         resizeObserver.disconnect()
       }
     }
-  }, [detections])
+  }, [detections, videoRef, canvasRef, hasCameraAccess])
 
   // Enable auto-scan on login
   useEffect(() => {
@@ -629,7 +777,10 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
             <canvas
               ref={canvasRef}
               className="absolute top-0 left-0 w-full h-full pointer-events-none"
-              style={{ zIndex: 10 }}
+              style={{ 
+                zIndex: 10,
+                imageRendering: 'pixelated' // Ensure crisp rendering
+              }}
             />
 
             {/* Status Badge Overlay */}

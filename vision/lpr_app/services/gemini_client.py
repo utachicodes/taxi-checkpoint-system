@@ -2,8 +2,8 @@
 import json
 import logging
 import base64
+import requests
 from typing import Optional, Dict, Any
-from google import genai
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -12,24 +12,41 @@ logger = logging.getLogger(__name__)
 class GeminiClient:
     """
     Client for interacting with Google Gemini API for vision-based license plate recognition
+    Uses REST API directly for better compatibility
     """
     
     def __init__(self):
         """Initialize the Gemini client"""
         self.api_key = getattr(settings, 'GEMINI_API_KEY', None)
-        self.model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-1.5-flash')
+        model_from_settings = getattr(settings, 'GEMINI_MODEL', None)
+        
+        # Try model names that work with REST API v1
+        # REST API uses format: models/gemini-1.5-pro or models/gemini-pro-vision
+        self.model_candidates = [
+            model_from_settings,  # User-specified model
+            'models/gemini-1.5-pro',      # REST API format
+            'models/gemini-1.5-flash',     # REST API format
+            'models/gemini-pro-vision',    # Vision-specific model
+            'models/gemini-pro',           # Fallback
+        ]
+        
+        # Filter out None values and use first available
+        self.model_candidates = [m for m in self.model_candidates if m]
+        self.model_name = self.model_candidates[0] if self.model_candidates else 'models/gemini-1.5-pro'
         
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY is not configured in settings")
         
-        # Configure the Gemini client
-        self.client = genai.Client(api_key=self.api_key)
+        # Use REST API v1 endpoint (more stable than v1beta)
+        self.api_url = f"https://generativelanguage.googleapis.com/v1/{self.model_name}:generateContent"
         
         logger.info(f"GeminiClient initialized with model: {self.model_name}")
+        if len(self.model_candidates) > 1:
+            logger.debug(f"Alternative models available: {self.model_candidates[1:]}")
     
     def analyze_image(self, base64_image: str) -> Optional[str]:
         """
-        Send image and prompt to Gemini for analysis
+        Send image and prompt to Gemini for analysis using REST API
         
         Args:
             base64_image: Base64 encoded image string
@@ -37,37 +54,82 @@ class GeminiClient:
         Returns:
             Model response text or None if error occurs
         """
-        try:
-            # Decode base64 image
-            image_bytes = base64.b64decode(base64_image)
-            
-            # Get the LPR prompt from settings
-            prompt = settings.LPR_PROMPT
-            
-            # Generate content with image and text prompt
-            # Using types.Part.from_bytes to satisfy Pydantic validation
-            from google.genai import types
-            image_part = types.Part.from_bytes(data=image_bytes, mime_type='image/jpeg')
-            
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=[
-                    prompt,
-                    image_part
-                ]
-            )
-            
-            # Extract text from response
-            if response and response.text:
-                logger.info("Gemini API call completed successfully")
-                return response.text
-            else:
-                logger.error("Gemini returned empty response")
-                return None
+        prompt = settings.LPR_PROMPT
+        
+        # Try each model candidate until one works
+        for model_name in self.model_candidates:
+            try:
+                # Use REST API v1 endpoint
+                api_url = f"https://generativelanguage.googleapis.com/v1/{model_name}:generateContent?key={self.api_key}"
                 
-        except Exception as e:
-            logger.error(f"Error calling Gemini API: {str(e)}")
-            return None
+                logger.debug(f"Attempting API call with model: {model_name}")
+                
+                # Prepare request payload for REST API
+                payload = {
+                    "contents": [{
+                        "parts": [
+                            {"text": prompt},
+                            {
+                                "inline_data": {
+                                    "mime_type": "image/jpeg",
+                                    "data": base64_image
+                                }
+                            }
+                        ]
+                    }]
+                }
+                
+                headers = {
+                    "Content-Type": "application/json"
+                }
+                
+                response = requests.post(api_url, json=payload, headers=headers, timeout=30)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    
+                    # Extract text from response
+                    if result and 'candidates' in result and len(result['candidates']) > 0:
+                        candidate = result['candidates'][0]
+                        if 'content' in candidate and 'parts' in candidate['content']:
+                            text_parts = [part.get('text', '') for part in candidate['content']['parts'] if 'text' in part]
+                            response_text = ''.join(text_parts)
+                            
+                            if response_text:
+                                logger.info(f"Gemini API call completed successfully with model: {model_name}")
+                                self.model_name = model_name  # Update to working model
+                                return response_text
+                    
+                    logger.error(f"Gemini returned empty response for model: {model_name}")
+                    continue
+                else:
+                    error_data = response.json() if response.text else {}
+                    error_str = f"{response.status_code} {response.reason}"
+                    if error_data.get('error'):
+                        error_str = f"{error_str}: {error_data['error']}"
+                    
+                    logger.warning(f"Error calling Gemini API with model '{model_name}': {error_str}")
+                    
+                    # If model not found, try next candidate
+                    if response.status_code == 404 or 'NOT_FOUND' in str(error_data):
+                        logger.info(f"Model '{model_name}' not found, will try next alternative")
+                        continue
+                    else:
+                        # For other errors, log and try next model
+                        logger.debug(f"Non-404 error with model '{model_name}', trying next model")
+                        continue
+                    
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"Request error with model '{model_name}': {str(e)}")
+                continue
+            except Exception as e:
+                error_str = str(e)
+                logger.warning(f"Error calling Gemini API with model '{model_name}': {error_str}")
+                continue
+        
+        # If we get here, all models failed
+        logger.error("All Gemini model alternatives failed")
+        return None
     
     def health_check(self) -> bool:
         """
@@ -80,22 +142,35 @@ class GeminiClient:
             # Create a simple test image (1x1 pixel white PNG in base64)
             test_image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
             
-            # Decode image
-            image_bytes = base64.b64decode(test_image)
+            # Use REST API
+            api_url = f"https://generativelanguage.googleapis.com/v1/{self.model_name}:generateContent?key={self.api_key}"
             
-            # Try a minimal request
-            from google.genai import types
-            image_part = types.Part.from_bytes(data=image_bytes, mime_type='image/png')
+            payload = {
+                "contents": [{
+                    "parts": [
+                        {"text": "Describe this image briefly."},
+                        {
+                            "inline_data": {
+                                "mime_type": "image/png",
+                                "data": test_image
+                            }
+                        }
+                    ]
+                }]
+            }
             
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=[
-                    "Describe this image briefly.",
-                    image_part
-                ]
-            )
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(api_url, json=payload, headers=headers, timeout=10)
             
-            return response and response.text is not None
+            if response.status_code == 200:
+                result = response.json()
+                if result and 'candidates' in result and len(result['candidates']) > 0:
+                    candidate = result['candidates'][0]
+                    if 'content' in candidate and 'parts' in candidate['content']:
+                        text_parts = [part.get('text', '') for part in candidate['content']['parts'] if 'text' in part]
+                        return bool(''.join(text_parts))
+            
+            return False
             
         except Exception as e:
             logger.error(f"Health check failed: {str(e)}")

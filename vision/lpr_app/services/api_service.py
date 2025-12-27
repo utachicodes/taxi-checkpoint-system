@@ -275,13 +275,22 @@ class ApiService:
             # 2. Convert to PIL for YOLO
             image_pil = Image.open(io.BytesIO(file_content))
             
-            # 3. Local Inference (YOLO) - Fast Check
+            # 3. Local Inference (RF-DETR/YOLO) - Fast Check
             start_time = time.time()
             local_result = LocalInferenceService.detect_vehicle_and_plate(image_pil)
             
-            if local_result['success'] and not local_result['is_vehicle']:
-                logger.info(f"YOLO (Memory): No vehicle detected. Skipping Cloud AI.")
-                return {'success': True, 'is_vehicle': False, 'results': []}, None
+            # Log detection results
+            if local_result.get('success'):
+                backend = local_result.get('backend', 'unknown')
+                vehicle_count = len(local_result.get('vehicles', []))
+                logger.info(f"{backend.upper()} (Memory): Detected {vehicle_count} vehicle(s)")
+                if vehicle_count == 0:
+                    logger.info(f"{backend.upper()} (Memory): No vehicles detected locally, but proceeding to Cloud AI for better detection")
+            else:
+                logger.warning(f"Local inference failed: {local_result.get('error', 'Unknown error')}, proceeding to Cloud AI")
+            
+            # Always proceed to Cloud AI even if local detection fails
+            # This ensures we get bounding boxes even for difficult images
 
             # 4. Prepare for Cloud AI
             # Resize if needed (in memory)
@@ -301,6 +310,7 @@ class ApiService:
             if not api_response:
                 import tempfile, os
                 tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+                ocr = None
                 try:
                     tmp.write(buffered.getvalue())
                     tmp.flush()
@@ -311,16 +321,48 @@ class ApiService:
                         os.unlink(tmp.name)
                     except Exception:
                         pass
-                if not ocr:
-                    return {'success': False, 'error': 'API call failed'}, None
-                processing_time = int((time.time() - start_time) * 1000)
-                bbox = ocr.get('bbox') if isinstance(ocr, dict) else None
-                coords = {}
-                if bbox and len(bbox) == 4:
-                    coords = {'x1': bbox[0], 'y1': bbox[1], 'x2': bbox[2], 'y2': bbox[3]}
-                fallback_response = {
-                    'detections': [
-                        {
+                
+                # Build fallback response with local detections + OCR if available
+                fallback_response = {'detections': []}
+                
+                # Always include local vehicle detections (RF-DETR/YOLO)
+                if local_result.get('vehicles'):
+                    for v in local_result['vehicles']:
+                        if 'box' in v:
+                            x1, y1, x2, y2 = v['box']
+                            w = x2 - x1
+                            h = y2 - y1
+                            
+                            fallback_response['detections'].append({
+                                'bbox': [x1, y1, w, h],
+                                'type': v.get('class', 'vehicle'),
+                                'confidence': v.get('confidence', 0),
+                                'source': 'local'
+                            })
+                
+                # Add OCR result if available
+                if ocr:
+                    bbox = ocr.get('bbox') if isinstance(ocr, dict) else None
+                    coords = {}
+                    if bbox and len(bbox) == 4:
+                        coords = {'x1': bbox[0], 'y1': bbox[1], 'x2': bbox[2], 'y2': bbox[3]}
+                    
+                    # If we have vehicle detections, add OCR to the first one
+                    # Otherwise create a new detection entry
+                    if fallback_response['detections']:
+                        fallback_response['detections'][0]['plate'] = {
+                            'coordinates': coords,
+                            'confidence': 0
+                        }
+                        fallback_response['detections'][0]['ocr'] = [
+                            {
+                                'text': ocr.get('text', ''),
+                                'confidence': ocr.get('confidence', 0.0)
+                            }
+                        ]
+                    else:
+                        # No vehicles detected but OCR found something
+                        fallback_response['detections'].append({
                             'plate': {
                                 'coordinates': coords,
                                 'confidence': 0
@@ -331,12 +373,15 @@ class ApiService:
                                     'confidence': ocr.get('confidence', 0.0)
                                 }
                             ]
-                        }
-                    ]
-                }
+                        })
+                
+                processing_time = int((time.time() - start_time) * 1000)
+                
+                # Return success even if only local detections (no OCR)
+                # This ensures bounding boxes are shown
                 return {
                     'success': True,
-                    'is_vehicle': True,
+                    'is_vehicle': len(fallback_response['detections']) > 0,
                     'results': fallback_response,
                     'processing_time_ms': processing_time,
                     'image_saved': False
@@ -355,22 +400,41 @@ class ApiService:
                 parsed_response = {'detections': []}
             if 'detections' not in parsed_response:
                 parsed_response['detections'] = []
-                
+            
+            # Track which vehicles already have detections (from Gemini)
+            existing_boxes = set()
+            for det in parsed_response['detections']:
+                if det.get('bbox'):
+                    bbox = det['bbox']
+                    existing_boxes.add(tuple(bbox[:4]))  # Use (x, y, w, h) as key
+            
+            # Add local vehicle detections if not already present
             if local_result.get('vehicles'):
+                logger.info(f"Merging {len(local_result['vehicles'])} local vehicle detections")
                 for v in local_result['vehicles']:
                     # Convert xyxy to xywh for frontend
                     if 'box' in v:
                         x1, y1, x2, y2 = v['box']
                         w = x2 - x1
                         h = y2 - y1
+                        bbox_key = (x1, y1, w, h)
                         
-                        # Add vehicle detection entry
-                        parsed_response['detections'].append({
-                            'bbox': [x1, y1, w, h],
-                            'type': v.get('class', 'vehicle'),
-                            'confidence': v.get('confidence', 0),
-                            'source': 'local'
-                        })
+                        # Only add if not already present (avoid duplicates)
+                        if bbox_key not in existing_boxes:
+                            vehicle_type = v.get('class', 'vehicle')
+                            # Capitalize first letter for better display
+                            vehicle_type = vehicle_type.capitalize() if vehicle_type else 'Vehicle'
+                            
+                            parsed_response['detections'].append({
+                                'bbox': [x1, y1, w, h],
+                                'type': vehicle_type,
+                                'class': vehicle_type,  # Also include as 'class' for compatibility
+                                'confidence': v.get('confidence', 0),
+                                'source': 'local',
+                                'ocr': []  # Empty OCR array, will show "Not visible"
+                            })
+                            existing_boxes.add(bbox_key)
+                            logger.debug(f"Added vehicle detection: {vehicle_type} at [{x1}, {y1}, {w}, {h}]")
 
             processing_time = int((time.time() - start_time) * 1000)
             

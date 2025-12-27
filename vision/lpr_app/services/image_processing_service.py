@@ -61,12 +61,19 @@ class ImageProcessingService:
             
             # --- PHASE 1: Local Inference (Vehicle Detection) ---
             local_result = LocalInferenceService.detect_vehicle_and_plate(image_path)
-            if local_result['success'] and not local_result['is_vehicle']:
-                logger.info(f"YOLO: No vehicle detected in {uploaded_image.filename}. Skipping Cloud AI.")
-                uploaded_image.processing_status = 'completed'
-                uploaded_image.api_response = {"is_vehicle": False, "detections": []}
-                uploaded_image.save()
-                return {'success': True, 'is_vehicle': False}
+            
+            # Log detection results but always proceed to Cloud AI for better detection
+            if local_result.get('success'):
+                backend = local_result.get('backend', 'unknown')
+                vehicle_count = len(local_result.get('vehicles', []))
+                logger.info(f"{backend.upper()}: Detected {vehicle_count} vehicle(s) in {uploaded_image.filename}")
+                if vehicle_count == 0:
+                    logger.info(f"{backend.upper()}: No vehicles detected locally, but proceeding to Cloud AI for better detection")
+            else:
+                logger.warning(f"Local inference failed: {local_result.get('error', 'Unknown error')}, proceeding to Cloud AI")
+            
+            # Always proceed to Cloud AI even if local detection fails
+            # This ensures we get bounding boxes even for difficult images
             
             prepared_path = ImageProcessor.prepare_image_for_api(image_path)
             
