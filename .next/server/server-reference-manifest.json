@@ -1,51 +1,51 @@
 {
   "node": {
-    "409921e876ca957577379dae2e8ca9f8eb4060c569": {
+    "4046736f80fb73045868e678d6c0377abd65ba27b7": {
       "workers": {
         "app/admin/page": {
-          "moduleId": 48061,
+          "moduleId": 47661,
           "async": false,
           "exportedName": "createOperatorAction",
-          "filename": "Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts"
+          "filename": "lib/actions/operator-actions.ts"
         }
       },
       "layer": {
         "app/admin/page": "action-browser"
       },
-      "filename": "Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts",
+      "filename": "lib/actions/operator-actions.ts",
       "exportedName": "createOperatorAction"
     },
-    "00e91a1bf1041f3b266cd4a3ece1471cc7a6859244": {
+    "00e4d312a412679daf291b7fbe2f5649dc7c8ccf68": {
       "workers": {
         "app/admin/page": {
-          "moduleId": 48061,
+          "moduleId": 47661,
           "async": false,
           "exportedName": "getOperatorsAction",
-          "filename": "Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts"
+          "filename": "lib/actions/operator-actions.ts"
         }
       },
       "layer": {
         "app/admin/page": "action-browser"
       },
-      "filename": "Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts",
+      "filename": "lib/actions/operator-actions.ts",
       "exportedName": "getOperatorsAction"
     },
-    "40ff54559935794b097f7327f535b162d36d8d1723": {
+    "40944cc39fa4c22ef7fcc01351e7d892a6fa1135d7": {
       "workers": {
         "app/admin/page": {
-          "moduleId": 48061,
+          "moduleId": 47661,
           "async": false,
           "exportedName": "deleteOperatorAction",
-          "filename": "Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts"
+          "filename": "lib/actions/operator-actions.ts"
         }
       },
       "layer": {
         "app/admin/page": "action-browser"
       },
-      "filename": "Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/lib/actions/operator-actions.ts",
+      "filename": "lib/actions/operator-actions.ts",
       "exportedName": "deleteOperatorAction"
     }
   },
   "edge": {},
-  "encryptionKey": "gdiOzkXexHggMjvBlBQOEqNXZWADlt30jd2YLA+Wubs="
+  "encryptionKey": "XsMdbskH0tqgqHJK9Au8In2GNQTe36PcYXkpjWPW3h0="
 }

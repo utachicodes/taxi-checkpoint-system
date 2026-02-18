@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:vision": "cd vision && python manage.py runserver 0.0.0.0:8000",
-    "dev:camera": "python edge/camera_bridge.py --api http://localhost:8000/api/v1/ocr/ --loc \"Development Station\"",
+    "dev:vision": "cd vision && venv\\Scripts\\python.exe manage.py runserver 0.0.0.0:8000",
+    "dev:camera": "vision\\venv\\Scripts\\python.exe edge/camera_bridge.py --api http://localhost:8000/api/v1/ocr/ --loc \"Development Station\"",
+    "dev:huskylens": "vision\\venv\\Scripts\\python.exe edge/huskylens_bridge.py --port COM3",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:vision\"",
     "dev:full": "concurrently \"npm run dev\" \"npm run dev:vision\" \"npm run dev:camera\"",
     "build": "next build",

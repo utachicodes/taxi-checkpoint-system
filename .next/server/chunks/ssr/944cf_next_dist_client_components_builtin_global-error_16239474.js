@@ -1,3 +1,0 @@
-module.exports=[33490,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(10316);a.n(d("[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/node_modules/next/dist/client/components/builtin/global-error.js <module evaluation>"))},86177,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(10316);a.n(d("[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/node_modules/next/dist/client/components/builtin/global-error.js"))},68758,a=>{"use strict";a.i(33490);var b=a.i(86177);a.n(b)}];
-
-//# sourceMappingURL=944cf_next_dist_client_components_builtin_global-error_16239474.js.map

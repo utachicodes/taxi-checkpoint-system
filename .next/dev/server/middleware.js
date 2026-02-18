@@ -1,8 +1,7 @@
 var R=require("./chunks/[turbopack]_runtime.js")("server/middleware.js")
-R.c("server/chunks/944cf_next_e6057a6e._.js")
-R.c("server/chunks/944cf_@supabase_realtime-js_dist_module_051bdfda._.js")
-R.c("server/chunks/944cf_@supabase_auth-js_dist_module_272c5418._.js")
-R.c("server/chunks/944cf_9e1e4b0d._.js")
-R.c("server/chunks/[root-of-the-server]__2c13e29e._.js")
-R.m("[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/node_modules/next/dist/esm/build/templates/middleware.js { INNER_MIDDLEWARE_MODULE => \"[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/proxy.ts [middleware] (ecmascript)\" } [middleware] (ecmascript)")
-module.exports=R.m("[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/node_modules/next/dist/esm/build/templates/middleware.js { INNER_MIDDLEWARE_MODULE => \"[project]/Documents/Innovation_Studio/Taxi-Checkpoint-Management-System/taxi-checkpoint-system/proxy.ts [middleware] (ecmascript)\" } [middleware] (ecmascript)").exports
+R.c("server/chunks/node_modules_next_6762cb56._.js")
+R.c("server/chunks/node_modules_@supabase_auth-js_dist_module_b73e6ca7._.js")
+R.c("server/chunks/node_modules_0e7f6a9a._.js")
+R.c("server/chunks/[root-of-the-server]__d8bc4fb6._.js")
+R.m("[project]/node_modules/next/dist/esm/build/templates/middleware.js { INNER_MIDDLEWARE_MODULE => \"[project]/proxy.ts [middleware] (ecmascript)\" } [middleware] (ecmascript)")
+module.exports=R.m("[project]/node_modules/next/dist/esm/build/templates/middleware.js { INNER_MIDDLEWARE_MODULE => \"[project]/proxy.ts [middleware] (ecmascript)\" } [middleware] (ecmascript)").exports

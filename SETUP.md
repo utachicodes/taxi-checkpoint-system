@@ -6,17 +6,17 @@ This guide will help you set up and run the complete TaxiGuard platform, includi
 
 The TaxiGuard platform consists of three main components:
 
-1. **Next.js Frontend** (Port 3000) - Operator and admin dashboards
-2. **Django Vision Backend** (Port 8000) - License plate recognition API
-3. **Camera Bridge** - Connects physical cameras to the vision API
+1.  **Next.js Frontend** (Port 3000) - Operator and admin dashboards
+2.  **Django Vision Backend** (Port 8000) - License plate recognition API
+3.  **Camera Bridge** - Connects physical cameras to the vision API
 
 ## Prerequisites
 
-- **Node.js** 18+ and npm
-- **Python** 3.8+
-- **Git**
-- **Supabase Account** (for database)
-- **Qwen API Key** or local Ollama instance (for vision AI)
+-   **Node.js** 18+ and npm
+-   **Python** 3.8+
+-   **Git**
+-   **Supabase Account** (for database)
+-   **Qwen API Key** or local Ollama instance (for vision AI)
 
 ## Installation Steps
 
@@ -302,6 +302,28 @@ taxi-checkpoint-system/
 2. Set up physical cameras at checkpoints
 3. Deploy to production (see `DEPLOYMENT.md`)
 4. Monitor system health via `/metrics` endpoint
+
+## HuskyLens Integration (Hybrid Mode)
+
+To solve the accuracy issues of hardware OCR, we use a **Hybrid Architecture**:
+
+1.  **Preparation**:
+    -   Connect HuskyLens via USB.
+    -   Identify the Serial Port (e.g., `COM3` or `/dev/ttyUSB0`).
+    -   Ensure your PC has a high-res camera available (or use HuskyLens in Webcam mode).
+
+2.  **Run the Enhanced Bridge**:
+    ```bash
+    cd edge
+    python huskylens_bridge.py --port COM3 --cam 0
+    ```
+    -   `--port`: The HuskyLens Serial port for hardware triggering.
+    -   `--cam`: The index of your high-res camera for AI reading.
+
+3.  **How it works**:
+    -   **Detection**: HuskyLens "triggers" the system when it sees a plate.
+    -   **AI Reading**: Your PC grabs a high-res frame and sends it to the Cloud Vision AI.
+    -   **Sync**: The result is instantly pushed to the Operator Dashboard.
 
 ## Support
 
