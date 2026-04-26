@@ -1,0 +1,47 @@
+mqtt:
+  host: mqtt
+  port: 1883
+  # user: admin
+  # password: password
+
+cameras:
+  taxi_checkpoint:
+    enabled: True
+    ffmpeg:
+      inputs:
+        - path: rtsp://admin:123456@192.168.0.123:554/live/ch0
+          roles:
+            - detect
+            - record
+    detect:
+      enabled: True
+      width: 1280
+      height: 720
+      fps: 5
+    objects:
+      track:
+        - car
+        - motorcycle
+        - bus
+        - license_plate
+
+# Optional: Configuration for internal LPR if using Frigate 0.14+ or similar
+# For now, we rely on the sub_label published via MQTT by external processors 
+# or manual sub_label setting if the user has that setup.
+
+snapshots:
+  enabled: True
+  timestamp: True
+  bounding_box: True
+  retain:
+    default: 7
+
+record:
+  enabled: True
+  retain:
+    days: 0
+    mode: all
+  events:
+    retain:
+      default: 10
+      mode: active_objects

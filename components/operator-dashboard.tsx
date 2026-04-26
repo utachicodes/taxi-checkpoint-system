@@ -25,6 +25,7 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
   const [detections, setDetections] = useState<any[]>([])
 
   const videoRef = useRef<HTMLVideoElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
   const router = useRouter()
@@ -66,6 +67,12 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
     let stream: MediaStream | null = null
 
     async function startCamera() {
+      // Skip webcam setup if using IP camera bridge
+      if (process.env.NEXT_PUBLIC_USE_IP_CAMERA === "true") {
+        setHasCameraAccess(true)
+        return
+      }
+
       try {
         // First, try to enumerate devices to find the default camera (index 0)
         const devices = await navigator.mediaDevices.enumerateDevices()
@@ -106,22 +113,34 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
     }
   }, [toast])
 
+  // Current source reference (video or image)
+  const getActiveSource = () => {
+    if (process.env.NEXT_PUBLIC_USE_IP_CAMERA === "true") return imgRef.current
+    return videoRef.current
+  }
+
   // Auto-detection loop (for bounding box visualization only)
   useEffect(() => {
     if (!hasCameraAccess || !autoScanEnabled) return
 
     const interval = setInterval(async () => {
-      if (!videoRef.current) return
-      const video = videoRef.current
+      const source = getActiveSource()
+      if (!source) return
 
-      // Use off-screen canvas for capture to avoid conflict with overlay canvas
+      // Use off-screen canvas for capture
       const offscreenCanvas = document.createElement('canvas')
-      offscreenCanvas.width = video.videoWidth
-      offscreenCanvas.height = video.videoHeight
+      if (source instanceof HTMLVideoElement) {
+        offscreenCanvas.width = source.videoWidth
+        offscreenCanvas.height = source.videoHeight
+      } else {
+        offscreenCanvas.width = source.naturalWidth
+        offscreenCanvas.height = source.naturalHeight
+      }
+      
       const ctx = offscreenCanvas.getContext('2d')
       if (!ctx) return
 
-      ctx.drawImage(video, 0, 0)
+      ctx.drawImage(source, 0, 0)
       const imageData = offscreenCanvas.toDataURL('image/jpeg', 0.8)
 
       try {
@@ -153,13 +172,18 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
   // Draw bounding boxes
   useEffect(() => {
     const canvas = canvasRef.current
-    const video = videoRef.current
-    if (!canvas || !video) return
+    const source = getActiveSource()
+    if (!canvas || !source) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+    if (source instanceof HTMLVideoElement) {
+      canvas.width = source.videoWidth
+      canvas.height = source.videoHeight
+    } else {
+      canvas.width = source.naturalWidth
+      canvas.height = source.naturalHeight
+    }
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -309,6 +333,32 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
 
   // --- Helper function for scanning ---
   const captureAndScan = async () => {
+    // Handle IP Camera Capture via Bridge Snapshot
+    if (process.env.NEXT_PUBLIC_USE_IP_CAMERA === "true") {
+      try {
+        const res = await fetch('http://localhost:5000/snapshot')
+        if (res.ok) {
+          const blob = await res.blob()
+          const formData = new FormData()
+          formData.append('image', blob)
+          formData.append('save_image', 'false')
+          
+          const visionRes = await fetch(config.api.visionApiEndpoint, { method: 'POST', body: formData })
+          if (visionRes.ok) {
+            const data = await visionRes.json()
+            const plate = data.detections?.[0]?.ocr?.[0]?.text
+            if (plate) {
+              setSearchQuery(plate)
+              processPlate(plate)
+            }
+          }
+        }
+      } catch (e) {
+        console.error('IP Camera capture error:', e)
+      }
+      return
+    }
+
     if (!videoRef.current) return
 
     // Performance Optimization: Resize image before sending
@@ -372,8 +422,9 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
     let isMounted = true
 
     const runScan = async () => {
+      const source = getActiveSource()
       // Base checks
-      if (!autoScanEnabled || !hasCameraAccess || !videoRef.current || !isMounted) return
+      if (!autoScanEnabled || !hasCameraAccess || !source || !isMounted) return
 
       try {
         await captureAndScan()
@@ -443,6 +494,9 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
   }
 
   const handleLogout = async () => {
+    // Clear mock cookie
+    document.cookie = "taxiguard_auth_bypass=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    
     await supabase.auth.signOut()
     router.push("/")
   }
@@ -472,8 +526,21 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
         {/* Left Column: Camera Feed (7 cols) */}
         <div className="col-span-12 lg:col-span-7 flex flex-col h-full">
           <div className="relative flex-1 bg-zinc-900 rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-            {/* Video Feed */}
-            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+            {/* Video Feed or IP Camera Bridge */}
+            {process.env.NEXT_PUBLIC_USE_IP_CAMERA === "true" ? (
+              <img 
+                ref={imgRef}
+                src="http://localhost:5000/video_feed" 
+                className="w-full h-full object-cover" 
+                alt="Live IP Camera Feed" 
+                onError={(e) => {
+                  console.error("Bridge connection lost");
+                  (e.target as HTMLImageElement).src = "https://placehold.co/1280x720/000000/FFFFFF?text=CAMERA+OFFLINE";
+                }}
+              />
+            ) : (
+              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+            )}
 
             {/* Canvas Overlay for Bounding Boxes */}
             <canvas

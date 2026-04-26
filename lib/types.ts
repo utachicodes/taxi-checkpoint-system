@@ -52,6 +52,7 @@ export interface Operator {
   checkpoint_id?: string
   is_active: boolean
   created_at: string
+  checkpoint?: Checkpoint
 }
 
 export interface CheckpointRecord {

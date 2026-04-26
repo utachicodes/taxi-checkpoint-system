@@ -44,54 +44,30 @@ export default function LoginPage() {
       return
     }
 
-    const supabase = createClient()
     setIsLoading(true)
 
-    try {
-      const { error, data } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      })
-      
-      if (error) throw error
-
-      if (!data.user) {
-        throw new Error("Aucun utilisateur trouvé")
-      }
-
-      const { data: operator, error: operatorError } = await supabase
-        .from("operators")
-        .select("role")
-        .eq("id", data.user.id)
-        .single()
-
-      if (operatorError) {
-        throw new Error("Profil opérateur introuvable. Veuillez contacter l'administrateur.")
-      }
-
+    // --- MOCK AUTH BYPASS ---
+    // Instead of real sign-in, we just set a mock cookie and redirect.
+    console.log("Mock Auth: Accepting any credentials")
+    
+    // Check for "admin" in email to determine role
+    const isMockAdmin = email.toLowerCase().includes("admin")
+    
+    // Set a bypass cookie
+    document.cookie = `taxiguard_auth_bypass=${isMockAdmin ? 'admin' : 'operator'}; path=/; max-age=86400`
+    
+    setTimeout(() => {
       toast({
-        title: "Connexion réussie",
+        title: "Connexion réussie (Mode Démo)",
         description: "Bienvenue dans le système TaxiGuard",
       })
-
-      if (operator?.role === "admin") {
-        router.push("/admin")
-      } else {
-        router.push("/operator")
-      }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Une erreur s'est produite lors de la connexion"
       
-      toast({
-        title: "Erreur de connexion",
-        description: errorMessage,
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
+      // Use window.location.href for a forceful redirect to ensure the session is picked up
+      window.location.href = isMockAdmin ? "/admin" : "/operator"
+    }, 500)
+    return;
+    // --- END MOCK AUTH BYPASS ---
+    // --- END MOCK AUTH BYPASS ---
   }
 
   return (

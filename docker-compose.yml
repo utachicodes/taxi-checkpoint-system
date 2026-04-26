@@ -1,0 +1,49 @@
+version: "3.9"
+services:
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    container_name: mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:stable
+    container_name: frigate
+    privileged: true # Required for access to hardware acceleration
+    shm_size: "64mb" # Increase for multiple high-res cameras
+    restart: unless-stopped
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./frigate/config.yml:/config/config.yml
+      - ./frigate/storage:/media/frigate
+      - type: tmpfs # Optional: separate directory for clips
+        target: /tmp/cache
+        tmpfs:
+          size: 1000000000
+    ports:
+      - "5000:5000"
+      - "8554:8554" # RTSP feeds
+      - "8555:8555" # WebRTC
+    environment:
+      FRIGATE_RTSP_PASSWORD: "password"
+    depends_on:
+      - mqtt
+
+  anpr-backend:
+    build: ./anpr_platform
+    container_name: anpr-backend
+    restart: unless-stopped
+    ports:
+      - "8001:8000" # Mapping to 8001 to avoid conflict with existing vision API if running
+    environment:
+      - MQTT_HOST=mqtt
+      - DATABASE_URL=sqlite:///./anpr.db
+    volumes:
+      - ./anpr_platform:/app
+    depends_on:
+      - mqtt

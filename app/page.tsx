@@ -1,8 +1,25 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import HeroScene from "@/components/HeroScene"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function LandingPage() {
+  const router = useRouter()
+
+  useEffect(() => {
+    // Auto-login for zero friction demo
+    const cookies = document.cookie.split('; ');
+    const bypass = cookies.find(row => row.startsWith('taxiguard_auth_bypass='));
+    
+    if (!bypass) {
+      document.cookie = "taxiguard_auth_bypass=operator; path=/; max-age=86400"
+    }
+    router.push("/operator")
+  }, [router])
+
   return (
     <div className="min-h-screen bg-[#050505] text-white selection:bg-yellow-500 selection:text-black no-scrollbar flex flex-col overflow-x-hidden">
       {/* Header */}
@@ -53,11 +70,15 @@ export default function LandingPage() {
               </p>
 
               <div className="pt-4 flex gap-4 animate-fade-in-up delay-300">
-                <Link href="/auth/login">
-                  <Button className="cursor-pointer rounded-full h-12 px-8 bg-white text-black hover:bg-gray-200 transition-all hover:scale-105 active:scale-95 duration-300 text-base font-semibold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)]">
-                    Accéder au système
-                  </Button>
-                </Link>
+                <Button 
+                  onClick={() => {
+                    document.cookie = "taxiguard_auth_bypass=operator; path=/; max-age=86400"
+                    window.location.href = "/operator"
+                  }}
+                  className="cursor-pointer rounded-full h-12 px-8 bg-white text-black hover:bg-gray-200 transition-all hover:scale-105 active:scale-95 duration-300 text-base font-semibold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)]"
+                >
+                  Accéder au système
+                </Button>
 
                 <Link href="/about">
                   <Button variant="outline" className="cursor-pointer rounded-full h-12 px-8 bg-transparent border border-white/20 text-white hover:bg-white/10 transition-all hover:scale-105 active:scale-95 duration-300 text-base backdrop-blur-sm">

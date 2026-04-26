@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+paho-mqtt
+sqlalchemy
+websockets
+jinja2
+python-multipart
