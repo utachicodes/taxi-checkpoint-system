@@ -20,9 +20,22 @@ export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
 
+  const signInAs = (role: "admin" | "operator") => {
+    setIsLoading(true)
+    document.cookie = `taxiguard_auth_bypass=${role}; path=/; max-age=86400`
+
+    setTimeout(() => {
+      toast({
+        title: "Connexion réussie (Mode Démo)",
+        description: "Bienvenue dans le système TaxiGuard",
+      })
+      window.location.href = role === "admin" ? "/admin" : "/operator"
+    }, 300)
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Basic validation
     if (!email || !password) {
       toast({
@@ -44,29 +57,13 @@ export default function LoginPage() {
       return
     }
 
-    setIsLoading(true)
-
     // --- MOCK AUTH BYPASS ---
     // Instead of real sign-in, we just set a mock cookie and redirect.
     console.log("Mock Auth: Accepting any credentials")
-    
+
     // Check for "admin" in email to determine role
     const isMockAdmin = email.toLowerCase().includes("admin")
-    
-    // Set a bypass cookie
-    document.cookie = `taxiguard_auth_bypass=${isMockAdmin ? 'admin' : 'operator'}; path=/; max-age=86400`
-    
-    setTimeout(() => {
-      toast({
-        title: "Connexion réussie (Mode Démo)",
-        description: "Bienvenue dans le système TaxiGuard",
-      })
-      
-      // Use window.location.href for a forceful redirect to ensure the session is picked up
-      window.location.href = isMockAdmin ? "/admin" : "/operator"
-    }, 500)
-    return;
-    // --- END MOCK AUTH BYPASS ---
+    signInAs(isMockAdmin ? "admin" : "operator")
     // --- END MOCK AUTH BYPASS ---
   }
 
@@ -155,6 +152,36 @@ export default function LoginPage() {
                 </Link>
               </div>
             </form>
+
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase tracking-widest">
+                <span className="bg-[#050505] px-4 text-zinc-500">Ou démo rapide</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isLoading}
+                onClick={() => signInAs("admin")}
+                className="h-14 rounded-2xl bg-white/5 border-white/10 hover:bg-white/10 text-white font-semibold"
+              >
+                Démo Admin
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isLoading}
+                onClick={() => signInAs("operator")}
+                className="h-14 rounded-2xl bg-white/5 border-white/10 hover:bg-white/10 text-white font-semibold"
+              >
+                Démo Opérateur
+              </Button>
+            </div>
           </div>
         </div>
       </main>
