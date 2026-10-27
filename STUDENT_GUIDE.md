@@ -71,6 +71,35 @@ Don't try to master all of this before writing code — skim top to bottom first
 
 **Checkpoint:** before you're productive, you should be able to explain, in your own words, the sequence diagram in README.md — camera → frontend → Django → YOLO → Qwen → Supabase → dashboard — and why each hop exists.
 
+### 2.4 Learning resources (docs & videos)
+
+Official documentation first, video second — docs stay accurate as versions change, videos can drift. Where there wasn't one specific video we could verify still exists and matches the topic, we link the channel instead of guessing a video URL — search that channel for the topic, don't assume the first result is current.
+
+**Frontend (§2.1)**
+- Next.js App Router — [nextjs.org/learn](https://nextjs.org/learn/dashboard-app) (official interactive course, builds a dashboard app — closest analogue to this repo). Video: [youtube.com/@VercelHQ](https://youtube.com/@VercelHQ) (Vercel's own channel).
+- TypeScript — [typescriptlang.org/docs/handbook](https://www.typescriptlang.org/docs/handbook/intro.html) (official Handbook). Video: search "TypeScript crash course" on [youtube.com/@freecodecamp](https://youtube.com/@freecodecamp).
+- Supabase Auth — [supabase.com/docs/guides/auth](https://supabase.com/docs/guides/auth).
+- Supabase Row Level Security — [supabase.com/docs/guides/auth/row-level-security](https://supabase.com/docs/guides/auth/row-level-security) (read this before touching any `scripts/*.sql` policy — it's exactly how operator/admin separation is enforced in this repo).
+- Supabase Realtime — [supabase.com/docs/guides/realtime](https://supabase.com/docs/guides/realtime) (how `scan_events` pushes to the dashboard live).
+- Tailwind CSS — [tailwindcss.com/docs](https://tailwindcss.com/docs/installation).
+- shadcn/ui — [ui.shadcn.com/docs](https://ui.shadcn.com/docs) (the component system already used under `components/ui/`).
+
+**Backend / AI pipeline (§2.2)**
+- Django — [docs.djangoproject.com](https://docs.djangoproject.com/en/stable/intro/tutorial01/) (official tutorial, part 1 onward). Video: search "Django crash course" on [youtube.com/@freecodecamp](https://youtube.com/@freecodecamp).
+- YOLOv8 / Ultralytics — [docs.ultralytics.com/models/yolov8](https://docs.ultralytics.com/models/yolov8/) (official docs for the exact model this repo uses). Video: [youtube.com/@Ultralytics](https://youtube.com/@Ultralytics) (Ultralytics' own channel — has walkthroughs of training and running YOLOv8).
+- OpenCV + Python — [docs.opencv.org](https://docs.opencv.org/4.x/) (official tutorials). Video: search "OpenCV full course Python" on [youtube.com/@freecodecamp](https://youtube.com/@freecodecamp) (freeCodeCamp has a long full-course video on this exact topic).
+- MQTT basics — [hivemq.com/mqtt-essentials](https://www.hivemq.com/mqtt-essentials/) (HiveMQ's well-known beginner series — publish/subscribe, topics, QoS, retained messages).
+- RTSP vs. ONVIF for IP cameras — [reolink.com/blog/onvif-vs-rtsp](https://reolink.com/blog/onvif-vs-rtsp/) (vendor explainer, but accurate and exactly the distinction you need for `rtsp_bridge.py` and `frigate/config.yml`).
+
+**Raspberry Pi deployment (§3.2 — this is the actual gap, so study this closely)**
+- Ultralytics' own Raspberry Pi guide — [docs.ultralytics.com/guides/raspberry-pi](https://docs.ultralytics.com/guides/raspberry-pi/) — covers OS setup, installing YOLO on ARM, and expected performance on Pi 4/5. **Start here before writing any Pi install script.**
+- Frigate NVR — [frigate.video](https://frigate.video/) (project site) and its docs at [docs.frigate.video](https://docs.frigate.video/) — relevant if you work on the `anpr_platform/`/Frigate path, since Frigate already runs well on Pi-class hardware with a Coral accelerator.
+
+**Choosing the right camera (§3.1)**
+- [kintronics.com/how-alpr-works](https://kintronics.com/how-alpr-works/) — explains why ALPR/LPR cameras are a different product category from generic security cameras: fixed fast shutter speed to freeze plates at speed, 850/940nm IR tuned to plate reflectivity, and resolution targets measured in pixels-across-the-plate (not just total megapixels) at your actual checkpoint distance. Read this before proposing a specific camera model.
+
+Treat all of the above as a starting point, not a syllabus to complete before coding — pull up the specific doc page or video when you hit the relevant task, rather than front-loading everything.
+
 ---
 
 ## 3. The real gaps: what's unsolved right now
