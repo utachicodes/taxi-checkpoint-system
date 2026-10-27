@@ -120,7 +120,6 @@ sequenceDiagram
 ---
 
 ## License & Credits
-
-**Copyright © 2025 UtachiCodes.**  
+ 
 Built for the **Municipality of Somone**.  
 *All Rights Reserved.*
