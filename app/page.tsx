@@ -3,23 +3,8 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import HeroScene from "@/components/HeroScene"
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
 
 export default function LandingPage() {
-  const router = useRouter()
-
-  useEffect(() => {
-    // Auto-login for zero friction demo
-    const cookies = document.cookie.split('; ');
-    const bypass = cookies.find(row => row.startsWith('taxiguard_auth_bypass='));
-    
-    if (!bypass) {
-      document.cookie = "taxiguard_auth_bypass=operator; path=/; max-age=86400"
-    }
-    router.push("/operator")
-  }, [router])
-
   return (
     <div className="min-h-screen bg-[#050505] text-white selection:bg-yellow-500 selection:text-black no-scrollbar flex flex-col overflow-x-hidden">
       {/* Header */}
