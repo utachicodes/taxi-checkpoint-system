@@ -496,9 +496,14 @@ export default function OperatorDashboard({ operator }: { operator: Operator }) 
   const handleLogout = async () => {
     // Clear mock cookie
     document.cookie = "taxiguard_auth_bypass=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
-    
-    await supabase.auth.signOut()
-    router.push("/")
+
+    try {
+      await supabase.auth.signOut()
+    } catch (e) {
+      console.error("signOut failed", e)
+    } finally {
+      window.location.href = "/"
+    }
   }
 
   return (
