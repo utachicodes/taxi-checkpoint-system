@@ -247,8 +247,16 @@ export default function AdminDashboard({ operator }: { operator: Operator }) {
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push("/")
+    // Clear mock auth bypass cookie set by the demo login
+    document.cookie = "taxiguard_auth_bypass=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+
+    try {
+      await supabase.auth.signOut()
+    } catch (e) {
+      console.error("signOut failed", e)
+    } finally {
+      window.location.href = "/"
+    }
   }
 
 
